@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thanh Ho</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  </head>
+
+  <body>
+    <div class="bg" aria-hidden="true">
+      <div class="grain"></div>
+
+      <svg class="blob b1" viewBox="0 0 600 600" aria-hidden="true">
+        <defs>
+          <linearGradient id="blobGrad1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="rgba(120,255,214,.92)"/>
+            <stop offset="55%" stop-color="rgba(170,140,255,.85)"/>
+            <stop offset="100%" stop-color="rgba(255,142,210,.86)"/>
+          </linearGradient>
+          <filter id="softGlow1" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="12" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- Saturn with ring -->
+        <ellipse cx="300" cy="300" rx="240" ry="55" fill="none" stroke="url(#blobGrad1)" stroke-width="12" opacity="0.5" filter="url(#softGlow1)"/>
+        <circle cx="300" cy="300" r="145" fill="url(#blobGrad1)" filter="url(#softGlow1)"/>
+        <ellipse cx="300" cy="300" rx="240" ry="55" fill="none" stroke="url(#blobGrad1)" stroke-width="10" opacity="0.75" filter="url(#softGlow1)"/>
+      </svg>
+
+      <svg class="blob b2" viewBox="0 0 600 600" aria-hidden="true">
+        <defs>
+          <linearGradient id="blobGrad2" x1="1" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(120,170,255,.9)"/>
+            <stop offset="55%" stop-color="rgba(255,190,120,.78)"/>
+            <stop offset="100%" stop-color="rgba(255,120,190,.82)"/>
+          </linearGradient>
+          <linearGradient id="blobGrad2Bands" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(255,190,120,.85)"/>
+            <stop offset="30%" stop-color="rgba(255,150,160,.75)"/>
+            <stop offset="50%" stop-color="rgba(180,140,255,.8)"/>
+            <stop offset="70%" stop-color="rgba(255,180,140,.75)"/>
+            <stop offset="100%" stop-color="rgba(120,170,255,.9)"/>
+          </linearGradient>
+          <filter id="softGlow2" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="14" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- Jupiter with bands -->
+        <circle cx="300" cy="300" r="135" fill="url(#blobGrad2Bands)" filter="url(#softGlow2)"/>
+        <!-- Horizontal stripes -->
+        <ellipse cx="300" cy="280" rx="135" ry="18" fill="rgba(0,0,0,0.15)" filter="url(#softGlow2)"/>
+        <ellipse cx="300" cy="310" rx="135" ry="15" fill="rgba(0,0,0,0.12)" filter="url(#softGlow2)"/>
+        <ellipse cx="300" cy="330" rx="130" ry="12" fill="rgba(0,0,0,0.1)" filter="url(#softGlow2)"/>
+        <!-- Great Red Spot -->
+        <ellipse cx="340" cy="320" rx="22" ry="16" fill="rgba(255,120,120,0.6)" filter="url(#softGlow2)"/>
+      </svg>
+
+      <svg class="blob b3" viewBox="0 0 600 600" aria-hidden="true">
+        <defs>
+          <linearGradient id="oceanGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="rgba(80,160,255,.92)"/>
+            <stop offset="50%" stop-color="rgba(100,180,255,.88)"/>
+            <stop offset="100%" stop-color="rgba(120,200,255,.9)"/>
+          </linearGradient>
+          <linearGradient id="landGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(100,220,140,.85)"/>
+            <stop offset="50%" stop-color="rgba(120,200,100,.8)"/>
+            <stop offset="100%" stop-color="rgba(140,180,80,.82)"/>
+          </linearGradient>
+          <filter id="softGlow3" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="12" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- Earth -->
+        <circle cx="300" cy="300" r="120" fill="url(#oceanGrad)" filter="url(#softGlow3)"/>
+        
+        <!-- North America-ish -->
+        <path d="M 260,240 Q 280,235 295,240 Q 305,245 310,255 Q 308,270 300,275 Q 285,278 275,270 Q 265,260 260,240 Z" fill="url(#landGrad)" opacity="0.9" filter="url(#softGlow3)"/>
+        
+        <!-- South America-ish -->
+        <path d="M 285,290 Q 295,288 300,295 Q 302,310 298,325 Q 292,332 285,330 Q 280,320 282,305 Q 283,295 285,290 Z" fill="url(#landGrad)" opacity="0.88" filter="url(#softGlow3)"/>
+        
+        <!-- Africa-ish -->
+        <path d="M 315,270 Q 330,268 340,275 Q 345,285 343,300 Q 340,315 330,320 Q 320,318 315,305 Q 313,285 315,270 Z" fill="url(#landGrad)" opacity="0.9" filter="url(#softGlow3)"/>
+        
+        <!-- Europe-ish -->
+        <ellipse cx="330" cy="255" rx="20" ry="15" fill="url(#landGrad)" opacity="0.85" filter="url(#softGlow3)"/>
+        
+        <!-- Asia-ish -->
+        <path d="M 340,250 Q 360,248 375,260 Q 380,275 375,290 Q 365,298 350,295 Q 340,285 340,270 Q 340,260 340,250 Z" fill="url(#landGrad)" opacity="0.87" filter="url(#softGlow3)"/>
+        
+        <!-- Australia-ish -->
+        <ellipse cx="370" cy="325" rx="18" ry="14" fill="url(#landGrad)" opacity="0.86" filter="url(#softGlow3)"/>
+        
+        <!-- North Pole ice cap -->
+        <ellipse cx="300" cy="195" rx="35" ry="20" fill="rgba(255,255,255,0.85)" filter="url(#softGlow3)"/>
+        <ellipse cx="300" cy="200" rx="28" ry="15" fill="rgba(240,250,255,0.75)" filter="url(#softGlow3)"/>
+        
+        <!-- South Pole ice cap -->
+        <ellipse cx="300" cy="405" rx="32" ry="18" fill="rgba(255,255,255,0.82)" filter="url(#softGlow3)"/>
+        <ellipse cx="300" cy="402" rx="25" ry="13" fill="rgba(240,250,255,0.7)" filter="url(#softGlow3)"/>
+        
+        <!-- Cute clouds -->
+        <ellipse cx="270" cy="260" rx="20" ry="12" fill="rgba(255,255,255,0.45)" filter="url(#softGlow3)"/>
+        <ellipse cx="350" cy="310" rx="18" ry="10" fill="rgba(255,255,255,0.4)" filter="url(#softGlow3)"/>
+        <ellipse cx="310" cy="340" rx="15" ry="9" fill="rgba(255,255,255,0.38)" filter="url(#softGlow3)"/>
+      </svg>
+
+      <!-- Crescent Moons -->
+      <div class="moon m1" aria-hidden="true"><i class="fas fa-moon"></i></div>
+      <div class="moon m2" aria-hidden="true"><i class="fas fa-moon"></i></div>
+      <div class="moon m3" aria-hidden="true"><i class="fas fa-moon"></i></div>
+
+      <div class="spark s1"></div>
+      <div class="spark s2"></div>
+      <div class="spark s3"></div>
+      
+      <svg class="star star1" viewBox="0 0 50 50" aria-hidden="true">
+        <defs>
+          <filter id="starGlow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <path d="M25,3 Q27,20 29,23 Q32,25 45,25 Q32,25 29,27 Q27,30 25,47 Q23,30 21,27 Q18,25 5,25 Q18,25 21,23 Q23,20 25,3 Z" fill="rgba(255,250,140,0.95)" filter="url(#starGlow)"/>
+        <path d="M25,8 Q26.5,21 28,23.5 Q30,25 40,25 Q30,25 28,26.5 Q26.5,29 25,42 Q23.5,29 22,26.5 Q20,25 10,25 Q20,25 22,23.5 Q23.5,21 25,8 Z" fill="rgba(255,255,200,0.95)" filter="url(#starGlow)"/>
+      </svg>
+      <svg class="star star2" viewBox="0 0 50 50" aria-hidden="true">
+        <path d="M25,3 Q27,20 29,23 Q32,25 45,25 Q32,25 29,27 Q27,30 25,47 Q23,30 21,27 Q18,25 5,25 Q18,25 21,23 Q23,20 25,3 Z" fill="rgba(255,248,120,0.93)" filter="url(#starGlow)"/>
+        <path d="M25,8 Q26.5,21 28,23.5 Q30,25 40,25 Q30,25 28,26.5 Q26.5,29 25,42 Q23.5,29 22,26.5 Q20,25 10,25 Q20,25 22,23.5 Q23.5,21 25,8 Z" fill="rgba(255,255,190,0.92)" filter="url(#starGlow)"/>
+      </svg>
+      <svg class="star star3" viewBox="0 0 50 50" aria-hidden="true">
+        <path d="M25,3 Q27,20 29,23 Q32,25 45,25 Q32,25 29,27 Q27,30 25,47 Q23,30 21,27 Q18,25 5,25 Q18,25 21,23 Q23,20 25,3 Z" fill="rgba(255,252,130,0.94)" filter="url(#starGlow)"/>
+        <path d="M25,8 Q26.5,21 28,23.5 Q30,25 40,25 Q30,25 28,26.5 Q26.5,29 25,42 Q23.5,29 22,26.5 Q20,25 10,25 Q20,25 22,23.5 Q23.5,21 25,8 Z" fill="rgba(255,255,195,0.93)" filter="url(#starGlow)"/>
+      </svg>
+      <svg class="star star4" viewBox="0 0 50 50" aria-hidden="true">
+        <path d="M25,3 Q27,20 29,23 Q32,25 45,25 Q32,25 29,27 Q27,30 25,47 Q23,30 21,27 Q18,25 5,25 Q18,25 21,23 Q23,20 25,3 Z" fill="rgba(255,246,110,0.9)" filter="url(#starGlow)"/>
+        <path d="M25,8 Q26.5,21 28,23.5 Q30,25 40,25 Q30,25 28,26.5 Q26.5,29 25,42 Q23.5,29 22,26.5 Q20,25 10,25 Q20,25 22,23.5 Q23.5,21 25,8 Z" fill="rgba(255,255,185,0.88)" filter="url(#starGlow)"/>
+      </svg>
+    </div>
+
+    <nav class="navbar">
+      <a href="#" class="nav-btn nav-home">UOP PsyD</a>
+      <a href="https://www.linkedin.com/in/tunlv/" target="_blank" rel="noopener noreferrer" class="nav-btn nav-linkedin">LINKEDIN</a>
+    </nav>
+
+    <main class="page">
+      <section class="hero">
+        <div class="hero-center">
+          <p class="tagline">UOP — Doctor of Clinical Psychology Student</p>
+          <h1 class="name" aria-label="Thanh Ho">
+            <span>Thanh Ho</span>
+          </h1>
+
+          <!-- Letter-by-letter stroke draw -->
+          <div class="scribble-wrap" aria-hidden="true">
+            <svg class="scribble" viewBox="0 0 1400 600" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="wordGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#1DA1FF"/>
+                  <stop offset="55%" stop-color="#8B5CF6"/>
+                  <stop offset="100%" stop-color="#EC4899"/>
+                </linearGradient>
+              </defs>
+
+              <!-- No glow filter. No neon. -->
+              <g id="psyWord" fill="url(#wordGrad)" stroke="none">
+                <text class="letter" data-i="0" y="200">p</text>
+                <text class="letter" data-i="1" y="200">s</text>
+                <text class="letter" data-i="2" y="200">y</text>
+                <text class="letter" data-i="3" y="200">c</text>
+                <text class="letter" data-i="4" y="200">h</text>
+                <text class="letter" data-i="5" y="200">o</text>
+                <text class="letter" data-i="6" y="200">l</text>
+                <text class="letter" data-i="7" y="200">o</text>
+                <text class="letter" data-i="8" y="200">g</text>
+                <text class="letter" data-i="9" y="200">y</text>
+                <text class="letter" data-i="10" y="200">.</text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="hint" aria-hidden="true">
+            <div class="mouse"></div>
+            <span>scroll</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="about">
+        <div class="about-container">
+          <h2 class="about-title">About Me</h2>
+          <p class="about-text">I'm a clinical psychology doctoral student at the University of the Pacific with a passion for technology and psychology. My background blends software engineering with mental health, which drives my interest in how technology can support psychological wellbeing. I've worked as a software engineering intern, built web applications, and volunteered with Crisis Text Line where I provide support to people navigating difficult moments. I believe in listening deeply, thinking systematically, and creating meaningful impact through both code and compassion.</p>
+        </div>
+        <div class="section-transition" aria-hidden="true">
+          <div class="transition-line"></div>
+        </div>
+      </section>
+
+      <section class="projects" id="projects">
+        <div class="projects-container">
+          <h2 class="projects-title">Projects</h2>
+          <div class="projects-grid">
+            <a href="https://paradisedental.netlify.app/" target="_blank" rel="noopener noreferrer" class="project-card">
+              <div class="project-icon">
+                <i class="fas fa-tooth"></i>
+              </div>
+              <h3 class="project-name">Paradise Dental</h3>
+              <p class="project-desc">Modern dental practice website with appointment scheduling and patient resources</p>
+            </a>
+            <a href="https://lvrobotics.org/" target="_blank" rel="noopener noreferrer" class="project-card">
+              <div class="project-icon">
+                <i class="fas fa-robot"></i>
+              </div>
+              <h3 class="project-name">LV Robotics</h3>
+              <p class="project-desc">Community robotics organization platform for students and enthusiasts</p>
+            </a>
+            <a href="https://cookiesarebad.netlify.app/" target="_blank" rel="noopener noreferrer" class="project-card">
+              <div class="project-icon">
+                <i class="fas fa-cookie-bite"></i>
+              </div>
+              <h3 class="project-name">Cookies</h3>
+              <p class="project-desc">Educational web application exploring privacy and tracking technologies</p>
+            </a>
+            <a href="https://github.com/npmcry" target="_blank" rel="noopener noreferrer" class="project-card">
+              <div class="project-icon">
+                <i class="fab fa-github"></i>
+              </div>
+              <h3 class="project-name">GitHub Profile</h3>
+              <p class="project-desc">Explore my open source contributions and personal coding projects</p>
+            </a>
+          </div>
+        </div>
+        <div class="section-transition" aria-hidden="true">
+          <div class="transition-line"></div>
+        </div>
+      </section>
+
+      <section class="contact" id="contact">
+        <div class="contact-container">
+          <h2 class="contact-title">Get In Touch</h2>
+          <p class="contact-subtitle">Have a question or want to work together? I'd love to hear from you.</p>
+          <form class="contact-form" name="contact" method="POST" data-netlify="true">
+            <input type="hidden" name="form-name" value="contact" />
+            <div class="form-group">
+              <input type="text" id="name" name="name" class="form-input" placeholder="Your Name" required />
+              <label for="name" class="form-label">Name</label>
+            </div>
+            <div class="form-group">
+              <input type="email" id="email" name="email" class="form-input" placeholder="your@email.com" required />
+              <label for="email" class="form-label">Email</label>
+            </div>
+            <div class="form-group">
+              <textarea id="message" name="message" rows="5" class="form-input form-textarea" placeholder="Your message..." required></textarea>
+              <label for="message" class="form-label">Message</label>
+            </div>
+            <button type="submit" class="form-submit">
+              <span>Send Message</span>
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="footer-content">
+          <p class="footer-text">© 2026 Thanh Ho. All rights reserved.</p>
+          <div class="footer-links">
+            <a href="https://github.com/npmcry" target="_blank" rel="noopener noreferrer" class="footer-link" aria-label="GitHub">
+              <i class="fab fa-github"></i>
+            </a>
+            <a href="mailto:contact@thanhho.com" class="footer-link" aria-label="Email">
+              <i class="fas fa-envelope"></i>
+            </a>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
