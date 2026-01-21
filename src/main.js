@@ -154,13 +154,13 @@ function buildAstroOverlay(){
       </g>
 
       <foreignObject x="80" y="680" width="80" height="50" class="astro-plane plane-a">
-        <img src="/src/japan.png" alt="japan-airline" style="width:100%;height:100%;object-fit:contain;" />
+        <img src="/japan.png" alt="japan-airline" style="width:100%;height:100%;object-fit:contain;" />
       </foreignObject>
       <foreignObject x="1200" y="150" width="80" height="50" class="astro-plane plane-b">
-        <img src="/src/korean.png" alt="korean-airline" style="width:100%;height:100%;object-fit:contain;" />
+        <img src="/korean.png" alt="korean-airline" style="width:100%;height:100%;object-fit:contain;" />
       </foreignObject>
       <foreignObject x="600" y="400" width="80" height="50" class="astro-plane plane-c">
-        <img src="/src/united.png" alt="united-airline" style="width:100%;height:100%;object-fit:contain;" />
+        <img src="/united.png" alt="united-airline" style="width:100%;height:100%;object-fit:contain;" />
       </foreignObject>
     </svg>
   `;
