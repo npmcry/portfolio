@@ -1,6 +1,7 @@
 import "./styles.css";
 import { initGalaxy } from "./galaxy.js";
 import { initMinecraft } from "./minecraft.js";
+import { initSkillsNetwork } from "./skills-network.js";
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -243,11 +244,12 @@ function tick(ms){
   setupScrollAnimations();
   initGalaxy();
   initMinecraft();
+  initSkillsNetwork();
   requestAnimationFrame(tick);
 })();
 
 function setupScrollAnimations(){
-  const sections = document.querySelectorAll('.projects, .contact');
+  const sections = document.querySelectorAll('.projects, .skills, .contact');
   
   if (!sections.length) return;
 
