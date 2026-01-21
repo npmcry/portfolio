@@ -1,7 +1,7 @@
 import "./styles.css";
 import { initGalaxy } from "./galaxy.js";
 import { initMinecraft } from "./minecraft.js";
-import { initSkillsNetwork } from "./skills-network.js";
+import { initPsychologyFramework } from "./psychology-framework.js";
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -244,12 +244,12 @@ function tick(ms){
   setupScrollAnimations();
   initGalaxy();
   initMinecraft();
-  initSkillsNetwork();
+  initPsychologyFramework();
   requestAnimationFrame(tick);
 })();
 
 function setupScrollAnimations(){
-  const sections = document.querySelectorAll('.projects, .skills, .contact');
+  const sections = document.querySelectorAll('.projects, .psychology, .contact');
   
   if (!sections.length) return;
 

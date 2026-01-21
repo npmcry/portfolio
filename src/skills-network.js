@@ -1,8 +1,11 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@r128/build/three.module.js';
-
 export function initSkillsNetwork() {
+  console.log('initSkillsNetwork called');
   const container = document.getElementById('skillsNetworkContainer');
-  if (!container) return;
+  console.log('Container found:', container);
+  if (!container) {
+    console.error('skillsNetworkContainer not found');
+    return;
+  }
 
   // Scene setup
   const scene = new THREE.Scene();
