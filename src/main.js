@@ -1,4 +1,6 @@
 import "./styles.css";
+import { initGalaxy } from "./galaxy.js";
+import { initMinecraft } from "./minecraft.js";
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -239,6 +241,8 @@ function tick(ms){
   layoutAndAnimateLetters();
   buildAstroOverlay();
   setupScrollAnimations();
+  initGalaxy();
+  initMinecraft();
   requestAnimationFrame(tick);
 })();
 
