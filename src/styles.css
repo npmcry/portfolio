@@ -817,6 +817,15 @@ foreignObject.astro-plane{
   z-index: 1;
 }
 
+.psychology-content-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+}
+
 .psychology.visible{
   opacity: 1;
   transform: translateY(0) scale(1);
@@ -1225,6 +1234,20 @@ foreignObject.astro-plane{
   box-shadow: 0 0 12px rgba(120, 255, 214, 0.1);
 }
 
+.encouragement-message {
+  color: #78FFD6;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  text-align: center;
+  margin: 0.5rem 0 0 0;
+  padding: 0.75rem;
+  background: rgba(120, 255, 214, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(120, 255, 214, 0.2);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
 /* Connect Dots Activity */
 .connect-dots-container {
   display: flex;
@@ -1587,5 +1610,170 @@ foreignObject.astro-plane{
   .nav-btn{
     font-size: 0.85rem;
     padding: 0.6rem 1.2rem;
+  }
+}
+
+/* Psychology Interactive - Responsive Styles */
+@media (max-width: 768px) {
+  #psychologyContainer {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .psych-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .psych-card-emoji {
+    font-size: 2.5rem;
+  }
+
+  .psych-card-name {
+    font-size: 1.1rem;
+  }
+
+  .psych-card-desc {
+    font-size: 0.85rem;
+  }
+
+  .psych-modal-content {
+    padding: 2rem;
+    max-width: 90%;
+  }
+
+  .activity-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .activity-header p {
+    font-size: 0.9rem;
+  }
+
+  .psychology-title {
+    font-size: clamp(1.8rem, 6vw, 3rem);
+    margin-bottom: 1rem;
+  }
+
+  .psychology {
+    padding: 80px 20px;
+  }
+
+  .psychology-content-wrapper {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .psychology {
+    padding: 60px 20px;
+  }
+
+  .psychology-content-wrapper {
+    gap: 1.5rem;
+  }
+
+  .psychology-title {
+    font-size: clamp(1.5rem, 8vw, 2rem);
+    margin-bottom: 0;
+  }
+
+  #psychologyContainer {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    padding: 1rem;
+  }
+
+  .psych-card {
+    padding: 1.5rem;
+  }
+
+  .psych-modal-content {
+    padding: 1.5rem;
+    max-height: 90vh;
+  }
+
+  .psych-modal-close {
+    top: 1rem;
+    right: 1rem;
+    width: 35px;
+    height: 35px;
+    font-size: 1.3rem;
+  }
+
+  .activity-btn {
+    padding: 0.65rem 1.2rem;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .plant {
+    font-size: 3rem;
+  }
+
+  .xp-bar {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .puzzle-pieces {
+    gap: 0.8rem;
+  }
+
+  .puzzle-piece {
+    font-size: 1.3rem;
+    padding: 0.8rem;
+  }
+
+  #reflection {
+    font-size: 0.95rem;
+    min-height: 120px;
+  }
+
+  .connect-dots-container {
+    gap: 0.8rem;
+  }
+
+  .dot-btn {
+    width: 55px;
+    height: 55px;
+    font-size: 1.3rem;
+  }
+
+  .activity-header h2 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .psych-card {
+    padding: 1.2rem;
+  }
+
+  .psych-card-emoji {
+    font-size: 2rem;
+  }
+
+  .psych-card-name {
+    font-size: 1rem;
+  }
+
+  .psych-modal-content {
+    padding: 1.2rem;
+  }
+
+  .puzzle-pieces {
+    gap: 0.6rem;
+  }
+
+  .puzzle-piece {
+    font-size: 1.1rem;
+    padding: 0.6rem;
+  }
+
+  .dot-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
   }
 }

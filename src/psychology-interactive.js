@@ -283,18 +283,22 @@
         <div class="mirror">🪞</div>
         <p class="reflection-text">What do you see?</p>
         <textarea id="reflection" placeholder="Write your thoughts..." maxlength="200"></textarea>
+        <p class="encouragement-message" id="encouragement"></p>
         <button class="activity-btn" id="reflectBtn">✨ Accept</button>
       </div>
     `;
 
     const textarea = container.querySelector('#reflection');
     const btn = container.querySelector('#reflectBtn');
+    const encouragement = container.querySelector('#encouragement');
 
     btn.addEventListener('click', () => {
       if (textarea.value.length > 0) {
         btn.textContent = '✨ Self-Aware!';
         btn.disabled = true;
         textarea.disabled = true;
+        encouragement.textContent = '🌟 You\'re doing amazing! Self-reflection is a powerful step toward growth and understanding. Keep being mindful! 💫';
+        encouragement.style.opacity = '1';
       }
     });
   }
