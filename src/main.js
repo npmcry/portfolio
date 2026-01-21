@@ -1,7 +1,7 @@
 import "./styles.css";
 import { initGalaxy } from "./galaxy.js";
 import { initMinecraft } from "./minecraft.js";
-import { initPsychologyFramework } from "./psychology-framework.js";
+import { initPsychologyFramework } from "./psychology-interactive.js";
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
