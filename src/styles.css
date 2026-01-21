@@ -219,6 +219,9 @@ body{
   margin-top: 20px;
   width: min(980px, 92vw);
 }
+#psyWord{
+  transform: translateY(-52px);
+}
 .scribble{
   width:100%;
   height:auto;
@@ -244,6 +247,7 @@ body{
   .script-word{ font-size: 130px; }
   #psyWord .letter{ font-size: 80px; }
   #psyWord .dot{ font-size: 220px; }
+  #psyWord{ transform: translateY(-42px); }
   .hero{
     padding: 200px 20px 60px;
   }
@@ -257,8 +261,10 @@ body{
 
 /* hint */
 .hint{
-  position: static;
-  margin-top: -280px;
+  position: absolute;
+  left: 50%;
+  top: 68%;
+  transform: translate(-50%, -50%);
   display:flex;
   flex-direction:column;
   align-items:center;
