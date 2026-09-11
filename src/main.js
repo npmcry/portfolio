@@ -237,11 +237,32 @@ function tick(ms){
   requestAnimationFrame(tick);
 }
 
+// Handle email footer link click
+function setupEmailHandler(){
+  const emailLink = document.querySelector('a[href="mailto:t_ho22@u.pacific.edu"]');
+  if (emailLink) {
+    emailLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Scroll to contact form
+      const contactSection = document.querySelector('#contact');
+      if (contactSection) {
+        contactSection.scrollIntoView({ behavior: 'smooth' });
+        // Focus on the form for better UX
+        setTimeout(() => {
+          const nameInput = document.querySelector('#name');
+          if (nameInput) nameInput.focus();
+        }, 600);
+      }
+    });
+  }
+}
+
 (async function start(){
   await waitForFonts();
   layoutAndAnimateLetters();
   buildAstroOverlay();
   setupScrollAnimations();
+  setupEmailHandler();
   initGalaxy();
   initMinecraft();
   initPsychologyFramework();
