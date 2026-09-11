@@ -213,7 +213,7 @@
       <section class="about">
         <div class="about-container">
           <h2 class="about-title">About Me</h2>
-          <p class="about-text">I'm a clinical psychology doctoral student at the University of the Pacific with a passion for technology and psychology. My background blends software engineering with mental health, which drives my interest in how technology can support psychological wellbeing. I've worked as a software engineering intern, built web applications, and volunteered with Crisis Text Line where I provide support to people navigating difficult moments. I believe in listening deeply, thinking systematically, and creating meaningful impact through both code and compassion.</p>
+          <p class="about-text">I'm a clinical psychology doctoral student at the University of the Pacific with a passion for technology and psychology. My background blends software engineering with[...]
         </div>
         <div class="section-transition" aria-hidden="true">
           <div class="transition-line"></div>
@@ -276,8 +276,10 @@
         <div class="contact-container">
           <h2 class="contact-title">Get In Touch</h2>
           <p class="contact-subtitle">Have a question or want to work together? I'd love to hear from you.</p>
-          <form class="contact-form" name="contact" method="POST" data-netlify="true">
+          <form class="contact-form" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
             <input type="hidden" name="form-name" value="contact" />
+            <input type="hidden" name="bot-field" />
+            <input type="hidden" name="to" value="t_ho22@u.pacific.edu" />
             <div class="form-group">
               <input type="text" id="name" name="name" class="form-input" placeholder="Your Name" required />
               <label for="name" class="form-label">Name</label>
@@ -308,7 +310,7 @@
             <a href="https://github.com/npmcry" target="_blank" rel="noopener noreferrer" class="footer-link" aria-label="GitHub">
               <i class="fab fa-github"></i>
             </a>
-            <a href="mailto:contact@thanhho.com" class="footer-link" aria-label="Email">
+            <a href="mailto:t_ho22@u.pacific.edu" class="footer-link" aria-label="Email">
               <i class="fas fa-envelope"></i>
             </a>
           </div>
