@@ -257,12 +257,69 @@ function setupEmailHandler(){
   }
 }
 
+// Handle contact form submission
+function setupContactForm(){
+  const contactForm = document.querySelector('#contactForm');
+  if (!contactForm) return;
+
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.querySelector('#name').value;
+    const email = document.querySelector('#email').value;
+    const message = document.querySelector('#message').value;
+    const submitBtn = contactForm.querySelector('.form-submit');
+    const originalText = submitBtn.innerHTML;
+
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span>Sending...</span>';
+
+    try {
+      // Send email via FormSubmit (free service, no backend needed)
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('message', message);
+
+      const response = await fetch('https://formsubmit.co/t_ho22@u.pacific.edu', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        // Success
+        submitBtn.innerHTML = '<span>✓ Message Sent!</span>';
+        contactForm.reset();
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }, 3000);
+      } else {
+        throw new Error('Failed to send');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      submitBtn.innerHTML = '<span>✗ Error - Try Again</span>';
+      submitBtn.disabled = false;
+      
+      // Reset after 3 seconds
+      setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+      }, 3000);
+    }
+  });
+}
+
 (async function start(){
   await waitForFonts();
   layoutAndAnimateLetters();
   buildAstroOverlay();
   setupScrollAnimations();
   setupEmailHandler();
+  setupContactForm();
   initGalaxy();
   initMinecraft();
   initPsychologyFramework();
