@@ -1,346 +1,305 @@
 import "./styles.css";
 import { initGalaxy } from "./galaxy.js";
 import { initMinecraft } from "./minecraft.js";
-import { initPsychologyFramework } from "./psychology-interactive.js";
+import { initWellbeing } from "./wellbeing.js";
+import { initResearchLab } from "./research-lab.js";
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
-const blob1 = document.querySelector(".blob.b1");
-const blob2 = document.querySelector(".blob.b2");
-const blob3 = document.querySelector(".blob.b3");
-const sp1 = document.querySelector(".spark.s1");
-const sp2 = document.querySelector(".spark.s2");
-const sp3 = document.querySelector(".spark.s3");
-const star1 = document.querySelector(".star.star1");
-const star2 = document.querySelector(".star.star2");
-const star3 = document.querySelector(".star.star3");
-const star4 = document.querySelector(".star.star4");
-const moon1 = document.querySelector(".moon.m1");
-const moon2 = document.querySelector(".moon.m2");
-const moon3 = document.querySelector(".moon.m3");
-const hero = document.querySelector(".hero");
-const hint = document.querySelector(".hint");
-const aboutSection = document.querySelector(".about");
+const $ = (s) => document.querySelector(s);
+const floaters = {
+  blob1: $(".blob.b1"), blob2: $(".blob.b2"), blob3: $(".blob.b3"),
+  sp1: $(".spark.s1"), sp2: $(".spark.s2"), sp3: $(".spark.s3"),
+  star1: $(".star.star1"), star2: $(".star.star2"), star3: $(".star.star3"), star4: $(".star.star4"),
+  moon1: $(".moon.m1"), moon2: $(".moon.m2"), moon3: $(".moon.m3"),
+};
+const hero = $(".hero");
+const hint = $(".hint");
+const aboutSection = $(".about");
 
-// ===== COLOR MOTION =====
-function setPalette(t, scrollY){
-  const base = t * 24 + scrollY * 0.02;
-  const h1 = (160 + Math.sin(base * 0.02) * 40) % 360;
-  const h2 = (270 + Math.sin(base * 0.018 + 1.2) * 50) % 360;
-  const h3 = (330 + Math.cos(base * 0.02 + 0.6) * 40) % 360;
-
-  document.documentElement.style.setProperty("--c1", `hsl(${h1} 95% 70%)`);
-  document.documentElement.style.setProperty("--c2", `hsl(${h2} 95% 74%)`);
-  document.documentElement.style.setProperty("--c3", `hsl(${h3} 95% 72%)`);
+// ===== Soft colour drift for the name =====
+function setPalette(t) {
+  const h1 = (160 + Math.sin(t * 0.35) * 30 + 360) % 360;
+  const h2 = (265 + Math.sin(t * 0.3 + 1.2) * 30 + 360) % 360;
+  const h3 = (335 + Math.cos(t * 0.33 + 0.6) * 25 + 360) % 360;
+  const root = document.documentElement.style;
+  root.setProperty("--c1", `hsl(${h1} 80% 78%)`);
+  root.setProperty("--c2", `hsl(${h2} 85% 82%)`);
+  root.setProperty("--c3", `hsl(${h3} 90% 82%)`);
 }
 
-async function waitForFonts(){
+async function waitForFonts() {
   try {
-    if (document.fonts?.ready) await document.fonts.ready;
+    await Promise.race([
+      document.fonts.load('120px "Pacifico"'),
+      new Promise((r) => setTimeout(r, 2500)),
+    ]);
+    await document.fonts.ready;
   } catch {}
 }
 
-// Layout letters so they form a centered word, then animate each letter sequentially
-function layoutAndAnimateLetters(){
+// Lay the script letters out, fit the SVG to the word, then write it letter by letter.
+function layoutAndAnimateLetters() {
   const letters = [...document.querySelectorAll("#psyWord .letter")];
-  const svg = document.querySelector(".scribble");
+  const svg = $(".scribble");
   if (!letters.length || !svg) return;
+  const gap = 4;
+  const widths = letters.map((el) => el.getComputedTextLength());
+  let x = 0;
+  letters.forEach((el, i) => { el.setAttribute("x", x.toFixed(2)); el.setAttribute("y", "140"); x += widths[i] + gap; });
+  const total = x - gap;
+  // tight viewBox around the word so it reads at every width
+  svg.setAttribute("viewBox", `-20 0 ${total + 40} 230`);
+  document.getElementById("psyWord")?.removeAttribute("style");
 
-  // Measure each letter width
-  const widths = letters.map(el => el.getComputedTextLength());
+  if (prefersReduced) { letters.forEach((el) => (el.style.opacity = "1")); return; }
 
-  // Small gap between letters for cursive connection
-  const gap = 5;
-
-  // Total width of the word
-  const total = widths.reduce((a,b)=>a+b,0) + gap * (letters.length - 1);
-
-  // Center within viewBox width (1400)
-  const startX = (1400 - total) / 2;
-
-  // Set each letter's x position
-  let x = startX;
-  letters.forEach((el, i) => {
-    el.setAttribute("x", x.toFixed(2));
-    x += widths[i] + gap;
-  });
-
-  // All letters start invisible
-  letters.forEach(el => {
+  letters.forEach((el) => {
     el.style.opacity = "0";
+    el.style.transition = "opacity 220ms ease-out, transform 320ms cubic-bezier(0.23, 1, 0.32, 1)";
+    el.style.transformBox = "fill-box";
+    el.style.transformOrigin = "bottom center";
+    el.style.transform = "translateY(10px)";
   });
-
-  if (prefersReduced) {
-    letters.forEach(el => (el.style.opacity = "1"));
-    return;
-  }
-
-  // Animate one letter at a time sequentially
   let idx = 0;
-
-  function animateNext(){
+  const next = () => {
     if (idx >= letters.length) {
-      // Loop: wait a bit then restart
       setTimeout(() => {
+        letters.forEach((el) => { el.style.opacity = "0"; el.style.transform = "translateY(10px)"; });
         idx = 0;
-        letters.forEach(el => el.style.opacity = "0");
-        requestAnimationFrame(animateNext);
-      }, 1500);
+        setTimeout(next, 500);
+      }, 2600);
       return;
     }
-
-    const el = letters[idx];
-    const duration = 200; // Quick appearance per letter
-    const start = performance.now();
-
-    function step(now){
-      const p = Math.min(1, (now - start) / duration);
-      el.style.opacity = `${p}`;
-
-      if (p < 1) {
-        requestAnimationFrame(step);
-      } else {
-        idx++;
-        // Small delay before next letter
-        setTimeout(() => requestAnimationFrame(animateNext), 50);
-      }
-    }
-
-    requestAnimationFrame(step);
-  }
-
-  animateNext();
+    const el = letters[idx++];
+    el.style.opacity = "1";
+    el.style.transform = "none";
+    setTimeout(next, 110);
+  };
+  next();
 }
 
-function buildAstroOverlay(){
+function buildAstroOverlay() {
   if (!aboutSection) return;
-
   const overlay = document.createElement("div");
   overlay.className = "about-astro-overlay";
   overlay.setAttribute("aria-hidden", "true");
   overlay.innerHTML = `
     <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
-      <!-- Constellation A: Orion (Hunter) -->
       <g class="astro-constellation const-a">
         <path d="M80 20 L100 60 L80 100 L60 60 Z" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none" />
         <path d="M40 70 L80 20 L120 70" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none" />
-        <circle class="astro-star" cx="80" cy="20" r="2.4" />
-        <circle class="astro-star" cx="100" cy="60" r="2.5" />
-        <circle class="astro-star" cx="80" cy="100" r="2.3" />
-        <circle class="astro-star" cx="60" cy="60" r="2.2" />
-        <circle class="astro-star" cx="40" cy="70" r="2.2" />
-        <circle class="astro-star" cx="120" cy="70" r="2.3" />
+        <circle class="astro-star" cx="80" cy="20" r="2.4" /><circle class="astro-star" cx="100" cy="60" r="2.5" />
+        <circle class="astro-star" cx="80" cy="100" r="2.3" /><circle class="astro-star" cx="60" cy="60" r="2.2" />
+        <circle class="astro-star" cx="40" cy="70" r="2.2" /><circle class="astro-star" cx="120" cy="70" r="2.3" />
       </g>
-
-      <!-- Constellation B: Ursa Major (Big Dipper) -->
       <g class="astro-constellation const-b">
         <path d="M20 80 L50 50 L80 60 L100 40 L120 50 L100 80 L70 75" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none" />
-        <circle class="astro-star" cx="20" cy="80" r="2.3" />
-        <circle class="astro-star" cx="50" cy="50" r="2.4" />
-        <circle class="astro-star" cx="80" cy="60" r="2.2" />
-        <circle class="astro-star" cx="100" cy="40" r="2.5" />
-        <circle class="astro-star" cx="120" cy="50" r="2.3" />
-        <circle class="astro-star" cx="100" cy="80" r="2.2" />
+        <circle class="astro-star" cx="20" cy="80" r="2.3" /><circle class="astro-star" cx="50" cy="50" r="2.4" />
+        <circle class="astro-star" cx="80" cy="60" r="2.2" /><circle class="astro-star" cx="100" cy="40" r="2.5" />
+        <circle class="astro-star" cx="120" cy="50" r="2.3" /><circle class="astro-star" cx="100" cy="80" r="2.2" />
         <circle class="astro-star" cx="70" cy="75" r="2.3" />
       </g>
-
-      <!-- Constellation C: Cassiopeia (W shape) -->
       <g class="astro-constellation const-c">
         <path d="M20 30 L40 50 L60 20 L80 50 L100 30" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none" />
-        <circle class="astro-star" cx="20" cy="30" r="2.2" />
-        <circle class="astro-star" cx="40" cy="50" r="2.4" />
-        <circle class="astro-star" cx="60" cy="20" r="2.3" />
-        <circle class="astro-star" cx="80" cy="50" r="2.5" />
+        <circle class="astro-star" cx="20" cy="30" r="2.2" /><circle class="astro-star" cx="40" cy="50" r="2.4" />
+        <circle class="astro-star" cx="60" cy="20" r="2.3" /><circle class="astro-star" cx="80" cy="50" r="2.5" />
         <circle class="astro-star" cx="100" cy="30" r="2.2" />
       </g>
-
       <foreignObject x="80" y="680" width="80" height="50" class="astro-plane plane-a">
-        <img src="/japan.png" alt="japan-airline" style="width:100%;height:100%;object-fit:contain;" />
+        <img src="/japan.png" alt="" style="width:100%;height:100%;object-fit:contain;" />
       </foreignObject>
       <foreignObject x="1200" y="150" width="80" height="50" class="astro-plane plane-b">
-        <img src="/korean.png" alt="korean-airline" style="width:100%;height:100%;object-fit:contain;" />
+        <img src="/korean.png" alt="" style="width:100%;height:100%;object-fit:contain;" />
       </foreignObject>
       <foreignObject x="600" y="400" width="80" height="50" class="astro-plane plane-c">
-        <img src="/united.png" alt="united-airline" style="width:100%;height:100%;object-fit:contain;" />
+        <img src="/united.png" alt="" style="width:100%;height:100%;object-fit:contain;" />
       </foreignObject>
-    </svg>
-  `;
-
-  if (prefersReduced) {
-    overlay.classList.add("reduce-motion");
-  }
-
+    </svg>`;
   aboutSection.insertBefore(overlay, aboutSection.firstChild);
-
-  if (prefersReduced) return;
-
-  const bounds = { w: window.innerWidth || 1, h: window.innerHeight || 1 };
-  const applyParallax = (x, y) => {
-    overlay.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-  };
-
-  const onMove = (e) => {
-    const nx = (e.clientX / bounds.w - 0.5) * 8;
-    const ny = (e.clientY / bounds.h - 0.5) * 5;
-    applyParallax(nx, ny);
-    overlay._parallaxX = nx;
-  };
-
-  const onScroll = () => {
-    const rect = aboutSection.getBoundingClientRect();
-    const progress = Math.min(1, Math.max(0, 1 - rect.top / (rect.height || 1)));
-    const yShift = (progress - 0.5) * 4;
-    overlay.style.opacity = 0.55 + progress * 0.2;
-    applyParallax(overlay._parallaxX || 0, yShift);
-  };
-
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("scroll", onScroll, { passive: true });
 }
 
-function tick(ms){
+// ===== Background float loop (runs only while the hero is on screen) =====
+let heroVisible = true;
+function tick(ms) {
   const t = (ms || 0) * 0.001;
-  const s = window.scrollY || 0;
-
-  if (hero && hint) {
-    const heroRect = hero.getBoundingClientRect();
-    const visible = heroRect.bottom > 160; // fade out once past hero
-    hint.style.opacity = visible ? "0.65" : "0";
-    hint.style.pointerEvents = visible ? "auto" : "none";
+  if (heroVisible && !prefersReduced) {
+    const f = floaters;
+    const tr = (el, s) => { if (el) el.style.transform = s; };
+    tr(f.blob1, `translate(${Math.sin(t) * 12}px, ${Math.cos(t * 0.9) * 10}px) rotate(${t * 6}deg)`);
+    tr(f.blob2, `translate(${Math.cos(t) * 10}px, ${Math.sin(t * 0.8) * 9}px) rotate(${-t * 5}deg)`);
+    tr(f.blob3, `translate(${Math.sin(t * 0.7) * 11}px, ${Math.cos(t * 0.75) * 8}px) rotate(${t * 4}deg)`);
+    tr(f.sp1, `translate(${Math.sin(t * 1.2) * 8}px, ${Math.cos(t * 1.1) * 6}px)`);
+    tr(f.sp2, `translate(${Math.cos(t * 1.4) * 6}px, ${Math.sin(t * 1.3) * 5}px)`);
+    tr(f.sp3, `translate(${Math.sin(t * 1.6) * 5}px, ${Math.cos(t * 1.5) * 4}px)`);
+    tr(f.star1, `translate(${Math.sin(t * 0.5) * 10}px, ${Math.cos(t * 0.4) * 8}px) rotate(${Math.sin(t * 0.3) * 15}deg)`);
+    tr(f.star2, `translate(${Math.cos(t * 0.6) * 8}px, ${Math.sin(t * 0.5) * 10}px) rotate(${Math.cos(t * 0.4) * 20}deg)`);
+    tr(f.star3, `translate(${Math.sin(t * 0.55) * 9}px, ${Math.cos(t * 0.45) * 7}px) rotate(${Math.sin(t * 0.35) * 18}deg)`);
+    tr(f.star4, `translate(${Math.cos(t * 0.65) * 7}px, ${Math.sin(t * 0.55) * 9}px) rotate(${Math.cos(t * 0.45) * 22}deg)`);
+    tr(f.moon1, `translate(${Math.sin(t * 0.4) * 12}px, ${Math.cos(t * 0.35) * 10}px) rotate(${Math.sin(t * 0.25) * 30}deg)`);
+    tr(f.moon2, `translate(${Math.cos(t * 0.45) * 10}px, ${Math.sin(t * 0.4) * 13}px) rotate(${Math.cos(t * 0.3) * 25}deg)`);
+    tr(f.moon3, `translate(${Math.sin(t * 0.42) * 11}px, ${Math.cos(t * 0.38) * 11}px) rotate(${Math.sin(t * 0.28) * 28}deg)`);
+    setPalette(t);
   }
-
-  if (!prefersReduced) {
-    if (blob1) blob1.style.transform =
-      `translate(${Math.sin(t)*12}px, ${Math.cos(t*0.9)*10}px) rotate(${t*6}deg)`;
-    if (blob2) blob2.style.transform =
-      `translate(${Math.cos(t)*10}px, ${Math.sin(t*0.8)*9}px) rotate(${-t*5}deg)`;
-    if (blob3) blob3.style.transform =
-      `translate(${Math.sin(t*0.7)*11}px, ${Math.cos(t*0.75)*8}px) rotate(${t*4}deg)`;
-
-    if (sp1) sp1.style.transform = `translate(${Math.sin(t*1.2)*8}px, ${Math.cos(t*1.1)*6}px)`;
-    if (sp2) sp2.style.transform = `translate(${Math.cos(t*1.4)*6}px, ${Math.sin(t*1.3)*5}px)`;
-    if (sp3) sp3.style.transform = `translate(${Math.sin(t*1.6)*5}px, ${Math.cos(t*1.5)*4}px)`;
-    
-    // Slow floating stars
-    if (star1) star1.style.transform = `translate(${Math.sin(t*0.5)*10}px, ${Math.cos(t*0.4)*8}px) rotate(${Math.sin(t*0.3)*15}deg)`;
-    if (star2) star2.style.transform = `translate(${Math.cos(t*0.6)*8}px, ${Math.sin(t*0.5)*10}px) rotate(${Math.cos(t*0.4)*20}deg)`;
-    if (star3) star3.style.transform = `translate(${Math.sin(t*0.55)*9}px, ${Math.cos(t*0.45)*7}px) rotate(${Math.sin(t*0.35)*18}deg)`;
-    if (star4) star4.style.transform = `translate(${Math.cos(t*0.65)*7}px, ${Math.sin(t*0.55)*9}px) rotate(${Math.cos(t*0.45)*22}deg)`;
-    
-    // Floating moons with gentle rotation
-    if (moon1) moon1.style.transform = `translate(${Math.sin(t*0.4)*12}px, ${Math.cos(t*0.35)*10}px) rotate(${Math.sin(t*0.25)*30}deg)`;
-    if (moon2) moon2.style.transform = `translate(${Math.cos(t*0.45)*10}px, ${Math.sin(t*0.4)*13}px) rotate(${Math.cos(t*0.3)*25}deg)`;
-    if (moon3) moon3.style.transform = `translate(${Math.sin(t*0.42)*11}px, ${Math.cos(t*0.38)*11}px) rotate(${Math.sin(t*0.28)*28}deg)`;
-  }
-
-  setPalette(t, s);
   requestAnimationFrame(tick);
 }
 
-// Handle email footer link click
-function setupEmailHandler(){
-  const emailLink = document.querySelector('a[href="mailto:t_ho22@u.pacific.edu"]');
-  if (emailLink) {
-    emailLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      // Scroll to contact form
-      const contactSection = document.querySelector('#contact');
-      if (contactSection) {
-        contactSection.scrollIntoView({ behavior: 'smooth' });
-        // Focus on the form for better UX
-        setTimeout(() => {
-          const nameInput = document.querySelector('#name');
-          if (nameInput) nameInput.focus();
-        }, 600);
-      }
-    });
-  }
+function setupHeroObserver() {
+  if (!hero) return;
+  new IntersectionObserver(([e]) => {
+    heroVisible = e.isIntersecting;
+    if (hint) hint.style.opacity = e.intersectionRatio > 0.6 ? "0.8" : "0";
+  }, { threshold: [0, 0.6] }).observe(hero);
 }
 
-// Handle contact form submission
-function setupContactForm(){
-  const contactForm = document.querySelector('#contactForm');
-  if (!contactForm) return;
+// ===== Navbar: background after scrolling + current section =====
+function setupNav() {
+  const nav = $(".navbar");
+  const onScroll = () => nav?.classList.toggle("is-scrolled", window.scrollY > 24);
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
 
-  contactForm.addEventListener('submit', async (e) => {
+  const links = [...document.querySelectorAll(".nav-link")];
+  const map = new Map(links.map((l) => [l.getAttribute("href").slice(1), l]));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      links.forEach((l) => l.removeAttribute("aria-current"));
+      map.get(e.target.id)?.setAttribute("aria-current", "true");
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  map.forEach((_, id) => { const s = document.getElementById(id); if (s) io.observe(s); });
+}
+
+// ===== Scroll reveals =====
+function setupScrollAnimations() {
+  const items = document.querySelectorAll(".reveal");
+  document.querySelectorAll(".stagger").forEach((list) =>
+    [...list.children].forEach((c, i) => c.style.setProperty("--i", i)));
+  if (!("IntersectionObserver" in window)) { items.forEach((i) => i.classList.add("visible")); return; }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("visible"); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  items.forEach((i) => io.observe(i));
+}
+
+// ===== Spotlight project cards (pointer-follow glow) =====
+function setupSpotlight() {
+  if (!finePointer) return;
+  document.querySelectorAll(".project-card").forEach((card) => {
+    card.addEventListener("pointermove", (e) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      card.style.setProperty("--my", `${e.clientY - r.top}px`);
+    });
+  });
+}
+
+// ===== Footer email link -> contact form =====
+function setupEmailHandler() {
+  const emailLink = document.querySelector('a[href="mailto:t_ho22@u.pacific.edu"]');
+  emailLink?.addEventListener("click", (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
     e.preventDefault();
+    $("#contact")?.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth" });
+    setTimeout(() => $("#name")?.focus({ preventScroll: true }), 600);
+  });
+}
 
-    const name = document.querySelector('#name').value;
-    const email = document.querySelector('#email').value;
-    const message = document.querySelector('#message').value;
-    const submitBtn = contactForm.querySelector('.form-submit');
-    const originalText = submitBtn.innerHTML;
+// ===== Contact form =====
+function setupContactForm() {
+  const form = $("#contactForm");
+  if (!form) return;
+  const btn = form.querySelector(".form-submit");
+  const label = form.querySelector(".form-submit-label");
+  const status = form.querySelector(".form-status");
+  const fields = ["name", "email", "message"].map((id) => form.querySelector(`#${id}`));
+  const messages = {
+    name: "Add your name so I know who's writing.",
+    email: "Add an email like name@example.com so I can reply.",
+    message: "Write a short message before sending.",
+  };
 
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span>Sending...</span>';
+  const showError = (input, msg) => {
+    let err = input.parentElement.querySelector(".form-error");
+    if (!msg) { input.removeAttribute("aria-invalid"); err?.remove(); return; }
+    if (!err) {
+      err = document.createElement("p");
+      err.className = "form-error";
+      err.id = `${input.id}-error`;
+      input.insertAdjacentElement("afterend", err);
+    }
+    err.textContent = msg;
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-describedby", err.id);
+  };
+  fields.forEach((f) => f.addEventListener("input", () => { if (f.checkValidity()) showError(f, ""); }));
 
+  // Cmd/Ctrl + Enter submits from the textarea
+  form.querySelector("#message").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) form.requestSubmit();
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    let firstBad = null;
+    fields.forEach((f) => {
+      f.value = f.value.trim() === "" ? "" : f.value;
+      const ok = f.checkValidity() && f.value.trim() !== "";
+      showError(f, ok ? "" : messages[f.id]);
+      if (!ok && !firstBad) firstBad = f;
+    });
+    if (firstBad) { firstBad.focus(); return; }
+
+    btn.setAttribute("aria-busy", "true");
+    btn.disabled = true;
+    label.textContent = "Sending…";
+    status.className = "form-status";
+    status.textContent = "";
     try {
-      // Send email via FormSubmit (free service, no backend needed)
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('email', email);
-      formData.append('message', message);
-
-      const response = await fetch('https://formsubmit.co/t_ho22@u.pacific.edu', {
-        method: 'POST',
-        body: formData
+      const data = new FormData(form);
+      const res = await fetch("https://formsubmit.co/ajax/t_ho22@u.pacific.edu", {
+        method: "POST", body: data, headers: { Accept: "application/json" },
       });
-
-      if (response.ok) {
-        // Success
-        submitBtn.innerHTML = '<span>✓ Message Sent!</span>';
-        contactForm.reset();
-        
-        // Reset button after 3 seconds
-        setTimeout(() => {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalText;
-        }, 3000);
-      } else {
-        throw new Error('Failed to send');
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      submitBtn.innerHTML = '<span>✗ Error - Try Again</span>';
-      submitBtn.disabled = false;
-      
-      // Reset after 3 seconds
-      setTimeout(() => {
-        submitBtn.innerHTML = originalText;
-      }, 3000);
+      if (!res.ok) throw new Error("Failed to send");
+      form.reset();
+      status.classList.add("is-ok");
+      status.textContent = "Message sent. Thank you! I'll reply soon.";
+    } catch (err) {
+      console.error("Error sending message:", err);
+      status.classList.add("is-error");
+      status.textContent = "That didn't send. Check your connection and try again, or email t_ho22@u.pacific.edu.";
+    } finally {
+      btn.removeAttribute("aria-busy");
+      btn.disabled = false;
+      label.textContent = "Send Message";
     }
   });
 }
 
-(async function start(){
+function safe(fn, name) {
+  try { fn(); } catch (err) { console.error(`${name} failed to start:`, err); }
+}
+
+(async function start() {
+  document.documentElement.classList.add("js");
+  safe(setupScrollAnimations, "reveals");
+  safe(setupNav, "nav");
+  safe(setupSpotlight, "spotlight");
+  safe(setupEmailHandler, "email link");
+  safe(setupContactForm, "contact form");
+  safe(initWellbeing, "well-being");
+  safe(initResearchLab, "research lab");
+  safe(setupHeroObserver, "hero observer");
   await waitForFonts();
-  layoutAndAnimateLetters();
-  buildAstroOverlay();
-  setupScrollAnimations();
-  setupEmailHandler();
-  setupContactForm();
-  initGalaxy();
-  initMinecraft();
-  initPsychologyFramework();
+  safe(layoutAndAnimateLetters, "hero letters");
+  safe(buildAstroOverlay, "astro overlay");
+  if (window.THREE) {
+    safe(initGalaxy, "galaxy");
+    safe(initMinecraft, "minecraft");
+  }
   requestAnimationFrame(tick);
 })();
-
-function setupScrollAnimations(){
-  const sections = document.querySelectorAll('.projects, .psychology, .contact');
-  
-  if (!sections.length) return;
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
-  }, {
-    threshold: 0.15,
-    rootMargin: '0px 0px -100px 0px'
-  });
-
-  sections.forEach(section => observer.observe(section));
-}
