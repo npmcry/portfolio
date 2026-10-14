@@ -1,7 +1,8 @@
-// Research Lab: hands-on regression, t-test and one-way ANOVA with live SVG charts.
+// Research Lab: hands-on regression, t-test and one-way ANOVA.
+// Charts are drawn as thin glowing curves with particle dots on the night-sky background.
 import {
-  linearRegression, welchT, oneWayAnova, tPdf, fPdf, tCrit, fCrit, tCdf,
-  normCdf, rng, formatP, mean,
+  linearRegression, welchT, oneWayAnova, tPdf, fPdf, tCrit, fCrit,
+  normCdf, rng, formatP, mean, variance,
 } from "./stats.js";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -9,6 +10,10 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 // Charts lay out at phone width on small screens so labels stay readable.
 const NARROW = window.innerWidth < 600;
 
+// Pastel marks on the dark ground. Every series is also labelled by name on the chart.
+const COLORS = { g1: "#9ff0d4", g2: "#b9a5ff", g3: "#ffb39a", ink: "#f4f1fb", reject: "#ff9fb0" };
+
+let uid = 0;
 function svgEl(tag, attrs = {}, parent) {
   const el = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
@@ -16,13 +21,36 @@ function svgEl(tag, attrs = {}, parent) {
   return el;
 }
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const easeOut = (t) => 1 - Math.pow(1 - t, 5); // close to cubic-bezier(0.23, 1, 0.32, 1)
+const easeOut = (t) => 1 - Math.pow(1 - t, 5); // ≈ cubic-bezier(0.23, 1, 0.32, 1)
 const fmt = (v, d = 2) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+const npdf = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI));
 
 function toSvgPoint(svg, evt) {
   const pt = svg.createSVGPoint();
   pt.x = evt.clientX; pt.y = evt.clientY;
   return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+// Glow filter + soft vertical fills for each colour; returns ids to reference.
+function defs(svg) {
+  const id = `lab${++uid}`;
+  const d = svgEl("defs", {}, svg);
+  const f = svgEl("filter", { id: `${id}-glow`, x: "-50%", y: "-50%", width: "200%", height: "200%" }, d);
+  svgEl("feGaussianBlur", { stdDeviation: 3.2, result: "b" }, f);
+  const m = svgEl("feMerge", {}, f);
+  svgEl("feMergeNode", { in: "b" }, m);
+  svgEl("feMergeNode", { in: "SourceGraphic" }, m);
+  const fs = svgEl("filter", { id: `${id}-soft`, x: "-100%", y: "-100%", width: "300%", height: "300%" }, d);
+  svgEl("feGaussianBlur", { stdDeviation: 2, result: "b" }, fs);
+  const ms = svgEl("feMerge", {}, fs);
+  svgEl("feMergeNode", { in: "b" }, ms);
+  svgEl("feMergeNode", { in: "SourceGraphic" }, ms);
+  for (const [k, c] of Object.entries(COLORS)) {
+    const g = svgEl("linearGradient", { id: `${id}-fill-${k}`, x1: 0, y1: 0, x2: 0, y2: 1 }, d);
+    svgEl("stop", { offset: "0%", "stop-color": c, "stop-opacity": k === "reject" ? 0.45 : 0.26 }, g);
+    svgEl("stop", { offset: "100%", "stop-color": c, "stop-opacity": 0.02 }, g);
+  }
+  return { glow: `url(#${id}-glow)`, soft: `url(#${id}-soft)`, fill: (k) => `url(#${id}-fill-${k})` };
 }
 
 // Tween any numeric array/object snapshot -> render each frame.
@@ -44,105 +72,118 @@ function tween(from, to, render, ms = 380) {
   return () => cancelAnimationFrame(raf);
 }
 
-function axes(g, { x0, x1, y0, y1, xTicks, yTicks, sx, sy, xLabel, yLabel }) {
-  const ax = svgEl("g", { class: "lab-axes" }, g);
-  for (const v of yTicks) {
-    svgEl("line", { x1: x0, x2: x1, y1: sy(v), y2: sy(v), class: "lab-gridline" }, ax);
-    const t = svgEl("text", { x: x0 - 8, y: sy(v) + 4, class: "lab-tick", "text-anchor": "end" }, ax);
-    t.textContent = v;
-  }
-  for (const v of xTicks) {
-    const t = svgEl("text", { x: sx(v), y: y0 + 20, class: "lab-tick", "text-anchor": "middle" }, ax);
-    t.textContent = v;
-  }
-  svgEl("line", { x1: x0, x2: x1, y1: y0, y2: y0, class: "lab-baseline" }, ax);
-  if (xLabel) {
-    const t = svgEl("text", { x: (x0 + x1) / 2, y: y0 + 40, class: "lab-axis-label", "text-anchor": "middle" }, ax);
-    t.textContent = xLabel;
-  }
-  if (yLabel) {
-    const t = svgEl("text", { x: -(y0 + y1) / 2, y: 14, class: "lab-axis-label", "text-anchor": "middle", transform: "rotate(-90)" }, ax);
-    t.textContent = yLabel;
-  }
-  return ax;
+function text(parent, x, y, str, cls, anchor = "middle") {
+  const t = svgEl("text", { x, y, class: cls, "text-anchor": anchor }, parent);
+  t.textContent = str;
+  return t;
 }
 
 function verdictHTML(p, alpha, h0) {
   const sig = p < alpha;
+  const a = String(alpha).replace(/^0/, "");
   return `
-    <div class="verdict ${sig ? "is-sig" : "is-ns"}" data-sig="${sig}">
-      <span class="verdict-icon" aria-hidden="true">${sig ? "<i class='fas fa-star'></i>" : "<i class='far fa-circle'></i>"}</span>
-      <span>
-        <strong>${sig ? "Significant" : "Not significant"}</strong>
-        <small>${sig ? `p ${p < 0.001 ? "< .001" : "= " + formatP(p)} < α = ${String(alpha).replace(/^0/, "")}, so we reject H₀` : `p = ${formatP(p)} ≥ α = ${String(alpha).replace(/^0/, "")}, so we fail to reject H₀`}</small>
-      </span>
-    </div>
-    <p class="lab-h0"><span>H₀</span> ${h0}</p>`;
+    <p class="verdict ${sig ? "is-sig" : "is-ns"}" data-sig="${sig}">
+      <span class="verdict-mark" aria-hidden="true"></span>
+      <span><strong>${sig ? "Significant" : "Not significant"}</strong>
+      ${sig ? `p ${p < 0.001 ? "< .001" : "= " + formatP(p)} is below α = ${a}, so we reject H₀.` : `p = ${formatP(p)} is not below α = ${a}, so we fail to reject H₀.`}</span>
+    </p>
+    <p class="lab-h0">H₀ says ${h0}</p>`;
 }
 
 function popVerdict(root, prevSig) {
   const v = root.querySelector(".verdict");
   if (!v || reduceMotion.matches) return;
   if (String(prevSig) !== v.dataset.sig) {
-    v.animate([{ transform: "scale(0.96)", opacity: 0.6 }, { transform: "scale(1)", opacity: 1 }],
-      { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+    v.animate([{ opacity: 0.4, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }],
+      { duration: 240, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
   }
 }
 
-// Density curve with shaded regions.
-function drawDistribution(g, { W, H, m, xmin, xmax, pdf, critLines, rejectRanges, pRanges, observed, obsLabel }) {
+function numbersHTML(rows) {
+  return `<dl class="lab-numbers">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+}
+
+// A test-statistic distribution: glowing curve, faint rejection tails, a "comet" where your result lands.
+function drawNull(g, ui, { W, H, m, xmin, xmax, pdf, crit, rejectRanges, observed, label }) {
   g.replaceChildren();
   const x0 = m.l, x1 = W - m.r, y0 = H - m.b, y1 = m.t;
   const sx = (v) => x0 + ((v - xmin) / (xmax - xmin)) * (x1 - x0);
-  const N = 160;
-  let ymax = 0;
+  const N = 180;
   const pts = [];
+  let ymax = 0;
   for (let i = 0; i <= N; i++) {
     const x = xmin + ((xmax - xmin) * i) / N;
     const y = pdf(x);
-    if (isFinite(y)) ymax = Math.max(ymax, y);
-    pts.push([x, isFinite(y) ? y : 0]);
+    const v = isFinite(y) ? y : 0;
+    ymax = Math.max(ymax, v);
+    pts.push([x, v]);
   }
   ymax = Math.min(ymax, 2.5) || 1;
   const sy = (v) => y0 - (Math.min(v, ymax) / ymax) * (y0 - y1);
+  const yAt = (x) => sy(pdf(clamp(x, xmin, xmax)) || 0);
   const area = (a, b) => {
     const seg = pts.filter(([x]) => x >= a && x <= b);
     if (seg.length < 2) return "";
     return `M${sx(seg[0][0])},${y0} ` + seg.map(([x, y]) => `L${sx(x)},${sy(y)}`).join(" ") + ` L${sx(seg.at(-1)[0])},${y0} Z`;
   };
-  svgEl("path", { d: area(xmin, xmax), class: "dist-fill" }, g);
-  for (const [a, b] of pRanges) svgEl("path", { d: area(a, b), class: "dist-p" }, g);
-  for (const [a, b] of rejectRanges) svgEl("path", { d: area(a, b), class: "dist-reject" }, g);
-  svgEl("path", { d: pts.map(([x, y], i) => `${i ? "L" : "M"}${sx(x)},${sy(y)}`).join(" "), class: "dist-line" }, g);
-  svgEl("line", { x1: x0, x2: x1, y1: y0, y2: y0, class: "lab-baseline" }, g);
-  for (const c of critLines) {
-    svgEl("line", { x1: sx(c), x2: sx(c), y1: y0, y2: y1 + 14, class: "dist-crit" }, g);
+  svgEl("line", { x1: x0 - 8, x2: x1 + 8, y1: y0, y2: y0, class: "lab-axis" }, g);
+  svgEl("path", { d: area(xmin, xmax), fill: ui.fill("ink") }, g);
+  for (const [a, b] of rejectRanges) svgEl("path", { d: area(a, b), fill: ui.fill("reject") }, g);
+  svgEl("path", { d: pts.map(([x, y], i) => `${i ? "L" : "M"}${sx(x)},${sy(y)}`).join(" "), class: "null-curve", filter: ui.glow }, g);
+  for (const c of crit) {
+    svgEl("line", { x1: sx(c), x2: sx(c), y1: y0, y2: yAt(c) - 10, class: "null-crit" }, g);
   }
-  if (critLines.length) {
-    const c = critLines.at(-1);
-    const t = svgEl("text", { x: sx(c) + 6, y: y1 + 40, class: "lab-tick dist-crit-label" }, g);
-    t.textContent = "critical";
-  }
-  const ox = clamp(observed, xmin, xmax);
-  const obs = svgEl("g", { class: "dist-obs", transform: `translate(${sx(ox)},0)` }, g);
-  svgEl("line", { x1: 0, x2: 0, y1: y0, y2: y1, class: "dist-obs-line" }, obs);
-  svgEl("circle", { cx: 0, cy: y1, r: 5, class: "dist-obs-dot" }, obs);
-  const lbl = svgEl("text", { x: sx(ox) > W * 0.62 ? -8 : 8, y: y1 + 4, class: "dist-obs-label", "text-anchor": sx(ox) > W * 0.62 ? "end" : "start" }, obs);
-  lbl.textContent = obsLabel + (observed > xmax ? " →" : observed < xmin ? " ←" : "");
-  const tickVals = [];
   const step = (xmax - xmin) > 12 ? 4 : (xmax - xmin) > 6 ? 2 : 1;
-  for (let v = Math.ceil(xmin / step) * step; v <= xmax; v += step) tickVals.push(v);
-  for (const v of tickVals) {
-    const t = svgEl("text", { x: sx(v), y: y0 + 18, class: "lab-tick", "text-anchor": "middle" }, g);
-    t.textContent = v;
+  for (let v = Math.ceil(xmin / step) * step; v <= xmax; v += step) text(g, sx(v), y0 + 20, v, "lab-tick");
+
+  // comet
+  const ox = clamp(observed, xmin, xmax);
+  const cx = sx(ox), cy = yAt(ox);
+  const comet = svgEl("g", { class: "null-comet" }, g);
+  const r = rng(Math.round(observed * 100) + 3);
+  const dir = observed >= 0 ? -1 : 1;
+  for (let i = 0; i < 14; i++) {
+    const back = r() * 46;
+    const px = clamp(cx + dir * back, x0, x1);
+    svgEl("circle", { cx: px, cy: yAt(xmin + ((px - x0) / (x1 - x0)) * (xmax - xmin)) + (r() - 0.5) * 14, r: 0.8 + r() * 1.6, class: "comet-spark", "fill-opacity": (1 - back / 50) * 0.9 }, comet);
   }
+  svgEl("circle", { cx, cy, r: 9, class: "comet-halo", filter: ui.soft }, comet);
+  svgEl("circle", { cx, cy, r: 4.5, class: "comet-core" }, comet);
+  const right = cx > W * 0.62;
+  text(comet, cx + (right ? -14 : 14), Math.max(cy - 12, y1 + 12), label + (observed > xmax ? " →" : observed < xmin ? " ←" : ""), "null-label", right ? "end" : "start");
+}
+
+// Bell curve + particle cloud for one group on a shared horizontal axis.
+function drawGroup(g, ui, { key, vals, mu, sd, sx, y0, peakH, label, seed, maxPdf, labelRow = 0, handle = false }) {
+  const gr = svgEl("g", { class: `grp ${key}` }, g);
+  const xs = [];
+  for (let i = 0; i <= 80; i++) xs.push(mu - 3.4 * sd + (6.8 * sd * i) / 80);
+  const yv = (x) => y0 - (npdf(x, mu, sd) / maxPdf) * peakH;
+  const d = xs.map((x, i) => `${i ? "L" : "M"}${sx(x)},${yv(x)}`).join(" ");
+  svgEl("path", { d: `${d} L${sx(xs.at(-1))},${y0} L${sx(xs[0])},${y0} Z`, fill: ui.fill(key) }, gr);
+  svgEl("path", { d, class: "grp-curve", stroke: COLORS[key], filter: ui.glow }, gr);
+  const top = yv(mu);
+  svgEl("line", { x1: sx(mu), x2: sx(mu), y1: y0 + 6, y2: top - 18, class: "grp-mean", stroke: COLORS[key] }, gr);
+  const r = rng(seed);
+  for (const v of vals) {
+    const h = (npdf(v, mu, sd) / maxPdf) * peakH;
+    const y = y0 - h * (0.12 + r() * 0.62);
+    svgEl("circle", { cx: sx(v), cy: y, r: vals.length > 40 ? 1.8 : 2.6, class: "grp-dot", fill: COLORS[key] }, gr);
+  }
+  text(gr, sx(mu), y0 + 26 + labelRow * 20, label, "grp-label");
+  if (handle) {
+    const h = svgEl("g", { class: "grp-handle-knob" }, gr);
+    svgEl("circle", { cx: sx(mu), cy: top - 18, r: 7, fill: COLORS[key], filter: ui.soft }, h);
+    text(h, sx(mu), top - 32, fmt(mu, 0), "grp-value");
+  }
+  return gr;
 }
 
 // ============================================================================
 // Regression
 // ============================================================================
 function initRegression(root, getAlpha) {
-  const W = NARROW ? 340 : 560, H = NARROW ? 300 : 360, m = { l: NARROW ? 44 : 52, r: 12, t: 16, b: 52 };
+  const W = NARROW ? 340 : 600, H = NARROW ? 310 : 370, m = { l: NARROW ? 34 : 40, r: 12, t: 32, b: 48 };
   const X = [3, 11], Y = [0, 100];
   const x0 = m.l, x1 = W - m.r, y0 = H - m.b, y1 = m.t;
   const sx = (v) => x0 + ((v - X[0]) / (X[1] - X[0])) * (x1 - x0);
@@ -153,12 +194,16 @@ function initRegression(root, getAlpha) {
   const svg = root.querySelector("svg.reg-chart");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.replaceChildren();
+  const ui = defs(svg);
   const hit = svgEl("rect", { x: x0, y: y1, width: x1 - x0, height: y0 - y1, class: "lab-hit" }, svg);
-  axes(svg, { x0, x1, y0, y1, xTicks: NARROW ? [4, 6, 8, 10] : [4, 5, 6, 7, 8, 9, 10], yTicks: [0, 25, 50, 75, 100], sx, sy,
-    xLabel: "Hours of sleep", yLabel: "Mood score" });
-  const band = svgEl("path", { class: "reg-band" }, svg);
+  svgEl("line", { x1: x0 - 8, x2: x1 + 8, y1: y0, y2: y0, class: "lab-axis" }, svg);
+  for (const v of [0, 50, 100]) text(svg, x0 - 10, sy(v) + 4, v, "lab-tick", "end");
+  for (const v of NARROW ? [4, 6, 8, 10] : [4, 5, 6, 7, 8, 9, 10]) text(svg, sx(v), y0 + 20, v, "lab-tick");
+  text(svg, (x0 + x1) / 2, y0 + 42, "Hours of sleep", "lab-axis-label");
+  text(svg, x0 - 34, y1 - 18, "Mood score", "lab-axis-label", "start");
+  const band = svgEl("path", { fill: ui.fill("g2") }, svg);
   const resG = svgEl("g", { class: "reg-residuals" }, svg);
-  const line = svgEl("line", { class: "reg-line" }, svg);
+  const line = svgEl("line", { class: "reg-line", filter: ui.glow }, svg);
   const ptsG = svgEl("g", { class: "reg-points" }, svg);
   const stats = root.querySelector(".reg-stats");
   const showBand = root.querySelector("[name=reg-band]");
@@ -171,7 +216,7 @@ function initRegression(root, getAlpha) {
 
   function generate() {
     const r = rng(seed++);
-    const n = 14;
+    const n = 16;
     return Array.from({ length: n }, (_, i) => {
       const x = 4 + (6 * (i + r())) / n;
       const y = clamp(22 + preset.slope * (x - 4) + preset.noise * r.normal(), 3, 97);
@@ -184,9 +229,9 @@ function initRegression(root, getAlpha) {
     const alpha = getAlpha();
     const tc = res.df > 0 ? tCrit(alpha, res.df) : 0;
     const xs = [X[0] + 0.5, X[1] - 0.5];
-    line.setAttribute("x1", sx(xs[0])); line.setAttribute("y1", sy(clamp(res.intercept + res.slope * xs[0], -40, 140)));
-    line.setAttribute("x2", sx(xs[1])); line.setAttribute("y2", sy(clamp(res.intercept + res.slope * xs[1], -40, 140)));
-    // 95% (or 1-alpha) confidence band for the mean response
+    const yl = (x) => sy(clamp(res.intercept + res.slope * x, -40, 140));
+    line.setAttribute("x1", sx(xs[0])); line.setAttribute("y1", yl(xs[0]));
+    line.setAttribute("x2", sx(xs[1])); line.setAttribute("y2", yl(xs[1]));
     if (showBand.checked && res.df > 0 && res.sxx > 0) {
       const top = [], bot = [];
       for (let i = 0; i <= 40; i++) {
@@ -200,39 +245,29 @@ function initRegression(root, getAlpha) {
     } else band.setAttribute("d", "");
     resG.replaceChildren();
     if (showRes.checked) {
-      for (const p of d) {
-        svgEl("line", { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(clamp(res.intercept + res.slope * p.x, -40, 140)) }, resG);
-      }
+      for (const p of d) svgEl("line", { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: yl(p.x) }, resG);
     }
-    // points (reuse nodes)
     while (ptsG.children.length > d.length) ptsG.lastChild.remove();
     d.forEach((p, i) => {
       let gp = ptsG.children[i];
       if (!gp) {
-        gp = svgEl("g", { class: "reg-pt", "data-i": i }, ptsG);
+        gp = svgEl("g", { class: "reg-pt" }, ptsG);
         svgEl("circle", { r: 22, class: "reg-pt-hit" }, gp);
-        svgEl("circle", { r: 7, class: "reg-pt-dot" }, gp);
+        svgEl("circle", { r: 9, class: "reg-pt-halo", filter: ui.soft }, gp);
+        svgEl("circle", { r: 4.2, class: "reg-pt-dot" }, gp);
       }
       gp.dataset.i = i;
       gp.setAttribute("transform", `translate(${sx(p.x)},${sy(p.y)})`);
     });
 
-    const dir = res.slope >= 0 ? "more" : "less";
+    const dir = res.slope >= 0 ? "more" : "fewer";
     stats.innerHTML = `
-      <dl class="lab-numbers">
-        <div><dt>Slope (b)</dt><dd>${fmt(res.slope)}</dd></div>
-        <div><dt>r</dt><dd>${fmt(res.r)}</dd></div>
-        <div><dt>R²</dt><dd>${fmt(res.r2)}</dd></div>
-        <div><dt>t(${res.df})</dt><dd>${fmt(res.t)}</dd></div>
-        <div><dt>p</dt><dd>${formatP(res.p)}</dd></div>
-        <div><dt>n</dt><dd>${res.n}</dd></div>
-      </dl>
-      <p class="lab-explain">Each extra hour of sleep goes with <strong>${fmt(Math.abs(res.slope), 1)} ${dir}</strong> mood points.
-      Sleep explains <strong>${Math.round(res.r2 * 100)}%</strong> of the differences in mood.</p>
-      ${verdictHTML(res.p, alpha, "Sleep has no relationship with mood (slope = 0).")}`;
+      <p class="lab-lede">Each extra hour of sleep goes with <em>${fmt(Math.abs(res.slope), 1)} ${dir}</em> mood points. Sleep explains <em>${Math.round(res.r2 * 100)}%</em> of the differences in mood.</p>
+      ${numbersHTML([["b", fmt(res.slope)], ["r", fmt(res.r)], ["R²", fmt(res.r2)], [`t(${res.df})`, fmt(res.t)], ["p", formatP(res.p)], ["n", res.n]])}
+      ${verdictHTML(res.p, alpha, "sleep and mood are unrelated (the slope is 0).")}`;
     popVerdict(stats, prevSig);
     prevSig = res.p < alpha;
-    svg.setAttribute("aria-label", `Scatter plot of ${res.n} people, sleep against mood. Regression slope ${fmt(res.slope)}, p ${formatP(res.p)}.`);
+    svg.setAttribute("aria-label", `Scatter plot of ${res.n} people, sleep against mood. Slope ${fmt(res.slope)}, p ${formatP(res.p)}.`);
   }
 
   function setData(next, animate = true) {
@@ -242,7 +277,6 @@ function initRegression(root, getAlpha) {
     stop = tween(from, next, render, animate ? 420 : 0);
   }
 
-  // Dragging points
   let drag = null;
   ptsG.addEventListener("pointerdown", (e) => {
     const gp = e.target.closest(".reg-pt");
@@ -263,7 +297,6 @@ function initRegression(root, getAlpha) {
   const endDrag = (e) => {
     if (!drag || e.pointerId !== drag.id) return;
     ptsG.querySelector(".is-dragging")?.classList.remove("is-dragging");
-    // A quick tap without movement removes the point (keep at least 3).
     if (!drag.moved && performance.now() - drag.t < 300 && data.length > 3) {
       data.splice(drag.i, 1);
       render(data);
@@ -309,12 +342,16 @@ function initRegression(root, getAlpha) {
 // t-test
 // ============================================================================
 function initTTest(root, getAlpha) {
-  const strip = root.querySelector("svg.t-strip");
+  const curves = root.querySelector("svg.t-strip");
   const dist = root.querySelector("svg.t-dist");
-  const SW = NARROW ? 340 : 560, SH = 210, sm = { l: NARROW ? 96 : 110, r: 14, t: 20, b: 40 };
-  const DW = NARROW ? 340 : 560, DH = 190, dm = { l: 14, r: 14, t: 16, b: 30 };
-  strip.setAttribute("viewBox", `0 0 ${SW} ${SH}`);
+  const SW = NARROW ? 340 : 600, SH = NARROW ? 250 : 280, sm = { l: 16, r: 16, t: 28, b: 64 };
+  const DW = NARROW ? 340 : 600, DH = 210, dm = { l: 16, r: 16, t: 24, b: 30 };
+  curves.setAttribute("viewBox", `0 0 ${SW} ${SH}`);
   dist.setAttribute("viewBox", `0 0 ${DW} ${DH}`);
+  const ui1 = defs(curves);
+  const layer1 = svgEl("g", {}, curves);
+  const ui2 = defs(dist);
+  const layer2 = svgEl("g", {}, dist);
   const dSlider = root.querySelector("[name=t-d]");
   const nSlider = root.querySelector("[name=t-n]");
   const dOut = root.querySelector("[data-out=t-d]");
@@ -338,65 +375,40 @@ function initTTest(root, getAlpha) {
     const { a, b } = state;
     const alpha = getAlpha();
     const res = welchT(a, b);
-    // strip plot
-    strip.replaceChildren();
-    const X = [10, 90];
-    const x0 = sm.l, x1 = SW - sm.r;
-    const sx = (v) => x0 + ((clamp(v, X[0], X[1]) - X[0]) / (X[1] - X[0])) * (x1 - x0);
-    for (const v of NARROW ? [30, 50, 70] : [20, 40, 60, 80]) {
-      svgEl("line", { x1: sx(v), x2: sx(v), y1: sm.t, y2: SH - sm.b, class: "lab-gridline" }, strip);
-      const t = svgEl("text", { x: sx(v), y: SH - sm.b + 20, class: "lab-tick", "text-anchor": "middle" }, strip);
-      t.textContent = v;
-    }
-    const lab = svgEl("text", { x: (x0 + x1) / 2, y: SH - 4, class: "lab-axis-label", "text-anchor": "middle" }, strip);
-    lab.textContent = "Well-being score";
-    const rows = [
-      { name: "Control", vals: a, cls: "g1", y: 62 },
-      { name: "Mindfulness", vals: b, cls: "g2", y: 128 },
-    ];
-    for (const row of rows) {
-      const t = svgEl("text", { x: sm.l - 14, y: row.y + 5, class: "lab-row-label", "text-anchor": "end" }, strip);
-      t.textContent = row.name;
-      const rr = rng(row.y);
-      const g = svgEl("g", { class: `strip ${row.cls}` }, strip);
-      for (const v of row.vals) {
-        svgEl("circle", { cx: sx(v), cy: row.y + (rr() - 0.5) * 30, r: row.vals.length > 50 ? 3.5 : 5 }, g);
-      }
-      const mx = sx(mean(row.vals));
-      svgEl("line", { x1: mx, x2: mx, y1: row.y - 26, y2: row.y + 26, class: `strip-mean ${row.cls}` }, g);
-      const ml = svgEl("text", { x: mx, y: row.y - 32, class: "strip-mean-label", "text-anchor": "middle" }, g);
-      ml.textContent = `M = ${fmt(mean(row.vals), 1)}`;
-    }
-    strip.setAttribute("aria-label", `Dot plot. Control mean ${fmt(res.ma, 1)}, mindfulness mean ${fmt(res.mb, 1)}.`);
 
-    // null distribution
-    const df = res.df;
-    const tc = tCrit(alpha, df);
-    const at = Math.abs(res.t);
-    const lim = 5;
-    drawDistribution(dist, {
+    // group curves on a shared axis
+    layer1.replaceChildren();
+    const X = [15, 95];
+    const x0 = sm.l, x1 = SW - sm.r, y0 = SH - sm.b;
+    const sx = (v) => x0 + ((clamp(v, X[0], X[1]) - X[0]) / (X[1] - X[0])) * (x1 - x0);
+    svgEl("line", { x1: x0, x2: x1, y1: y0, y2: y0, class: "lab-axis" }, layer1);
+    const groups = [
+      { key: "g1", vals: a, label: "Control" },
+      { key: "g2", vals: b, label: "Mindfulness" },
+    ].map((g) => ({ ...g, mu: mean(g.vals), sd: Math.sqrt(variance(g.vals)) || 1 }));
+    const maxPdf = Math.max(...groups.map((g) => npdf(g.mu, g.mu, g.sd)));
+    const close = Math.abs(sx(groups[0].mu) - sx(groups[1].mu)) < (NARROW ? 96 : 120);
+    groups.forEach((g, i) => drawGroup(layer1, ui1, {
+      ...g, sx, y0, peakH: y0 - sm.t - 24, seed: 40 + i, maxPdf, labelRow: close ? i : 0,
+      label: `${g.label} · M ${fmt(g.mu, 1)}`,
+    }));
+    curves.setAttribute("aria-label", `Distributions of the two groups. Control mean ${fmt(res.ma, 1)}, mindfulness mean ${fmt(res.mb, 1)}.`);
+
+    // null distribution of t
+    const df = res.df, tc = tCrit(alpha, df), lim = 5;
+    drawNull(layer2, ui2, {
       W: DW, H: DH, m: dm, xmin: -lim, xmax: lim, pdf: (x) => tPdf(x, df),
-      critLines: [-tc, tc],
-      rejectRanges: [[-lim, -tc], [tc, lim]],
-      pRanges: at < lim ? [[-lim, -at], [at, lim]] : [],
-      observed: res.t, obsLabel: `your t = ${fmt(res.t)}`,
+      crit: [-tc, tc], rejectRanges: [[-lim, -tc], [tc, lim]],
+      observed: res.t, label: `your t = ${fmt(res.t)}`,
     });
-    dist.setAttribute("aria-label", `t distribution if the null hypothesis were true. Observed t ${fmt(res.t)}, critical values ±${fmt(tc)}.`);
+    dist.setAttribute("aria-label", `t distribution if the null hypothesis were true. Your t is ${fmt(res.t)}; the critical values are ±${fmt(tc)}.`);
 
     const n = a.length, d = +dSlider.value;
-    const power = normCdf(Math.abs(d) * Math.sqrt(n / 2) - (tc)) + normCdf(-Math.abs(d) * Math.sqrt(n / 2) - tc);
+    const power = normCdf(Math.abs(d) * Math.sqrt(n / 2) - tc) + normCdf(-Math.abs(d) * Math.sqrt(n / 2) - tc);
     stats.innerHTML = `
-      <dl class="lab-numbers">
-        <div><dt>Control M</dt><dd>${fmt(res.ma, 1)}</dd></div>
-        <div><dt>Mindful M</dt><dd>${fmt(res.mb, 1)}</dd></div>
-        <div><dt>t(${fmt(df, 1)})</dt><dd>${fmt(res.t)}</dd></div>
-        <div><dt>p</dt><dd>${formatP(res.p)}</dd></div>
-        <div><dt>Cohen's d</dt><dd>${fmt(res.d)}</dd></div>
-        <div><dt>Power</dt><dd>${Math.round(clamp(power, 0, 1) * 100)}%</dd></div>
-      </dl>
-      <p class="lab-explain">The <span class="key-swatch"></span> pink tails hold the most extreme ${Math.round(alpha * 100 * 10) / 10}% of t values we'd expect if mindfulness did nothing.
-      If your <strong>t</strong> lands there, the result is significant. The <span class="key-swatch p"></span> shaded area beyond your t is the p-value.</p>
-      ${verdictHTML(res.p, alpha, "Mindfulness and control groups have the same average well-being.")}`;
+      <p class="lab-lede">The mindfulness group scored <em>${fmt(Math.abs(res.mb - res.ma), 1)} points ${res.mb >= res.ma ? "higher" : "lower"}</em> on average. With this many people, a real effect of this size would be detected <em>${Math.round(clamp(power, 0, 1) * 100)}%</em> of the time.</p>
+      ${numbersHTML([["Control M", fmt(res.ma, 1)], ["Mindful M", fmt(res.mb, 1)], [`t(${fmt(df, 1)})`, fmt(res.t)], ["p", formatP(res.p)], ["Cohen's d", fmt(res.d)], ["Power", `${Math.round(clamp(power, 0, 1) * 100)}%`]])}
+      ${verdictHTML(res.p, alpha, "both groups have the same average well-being.")}`;
     popVerdict(stats, prevSig);
     prevSig = res.p < alpha;
   }
@@ -448,10 +460,14 @@ function initTTest(root, getAlpha) {
 function initAnova(root, getAlpha) {
   const svg = root.querySelector("svg.a-chart");
   const dist = root.querySelector("svg.a-dist");
-  const W = NARROW ? 340 : 560, H = 320, m = { l: NARROW ? 44 : 52, r: 12, t: 28, b: 46 };
-  const DW = NARROW ? 340 : 560, DH = 170, dm = { l: 14, r: 14, t: 16, b: 30 };
+  const W = NARROW ? 340 : 600, H = NARROW ? 310 : 340, m = { l: 16, r: 16, t: 40, b: 92 };
+  const DW = NARROW ? 340 : 600, DH = 210, dm = { l: 16, r: 16, t: 24, b: 30 };
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   dist.setAttribute("viewBox", `0 0 ${DW} ${DH}`);
+  const ui = defs(svg);
+  const layer = svgEl("g", {}, svg);
+  const ui2 = defs(dist);
+  const layer2 = svgEl("g", {}, dist);
   const sdSlider = root.querySelector("[name=a-sd]");
   const nSlider = root.querySelector("[name=a-n]");
   const sdOut = root.querySelector("[data-out=a-sd]");
@@ -459,23 +475,21 @@ function initAnova(root, getAlpha) {
   const stats = root.querySelector(".a-stats");
   const split = root.querySelector(".ss-split");
   const groupsMeta = [
-    { name: "Therapy A", cls: "g1" },
-    { name: "Therapy B", cls: "g2" },
-    { name: "Waitlist", cls: "g3" },
+    { name: "Therapy A", key: "g1" },
+    { name: "Therapy B", key: "g2" },
+    { name: "Waitlist", key: "g3" },
   ];
-  let means = [58, 64, 47];
+  let means = [55, 72, 36];
   let seed = 5;
   let z = [];
   let prevSig = null;
   let stop = () => {};
 
-  const Y = [0, 100];
-  const x0 = m.l, x1 = W - m.r, y0 = H - m.b, y1 = m.t;
-  const sy = (v) => y0 - ((clamp(v, Y[0], Y[1]) - Y[0]) / (Y[1] - Y[0])) * (y0 - y1);
-  const iy = (py) => Y[0] + ((y0 - py) / (y0 - y1)) * (Y[1] - Y[0]);
-  const colX = (i) => x0 + ((x1 - x0) * (i + 0.5)) / 3;
+  const X = [0, 100];
+  const x0 = m.l, x1 = W - m.r, y0 = H - m.b;
+  const sx = (v) => x0 + ((clamp(v, X[0], X[1]) - X[0]) / (X[1] - X[0])) * (x1 - x0);
+  const ix = (px) => X[0] + ((px - x0) / (x1 - x0)) * (X[1] - X[0]);
 
-  // Standardised noise (exact mean 0, sd 1 per group) so a group's mean is exactly its handle.
   function makeZ() {
     const r = rng(seed);
     const n = +nSlider.value;
@@ -487,25 +501,14 @@ function initAnova(root, getAlpha) {
     });
   }
 
-  const layer = svgEl("g", {}, svg);
-  axes(svg, { x0, x1, y0, y1, xTicks: [], yTicks: [0, 25, 50, 75, 100], sx: () => 0, sy, yLabel: "Symptom relief" });
-  const grandLine = svgEl("line", { class: "a-grand" }, svg);
-  const grandLabel = svgEl("text", { class: "lab-tick a-grand-label", "text-anchor": "end" }, svg);
-  grandLabel.textContent = "grand mean";
-  const dotsG = svgEl("g", {}, svg);
-  const handlesG = svgEl("g", {}, svg);
+  // Keyboard/pointer handles live in their own layer above the drawing.
+  const handles = svgEl("g", { class: "a-handles" }, svg);
   groupsMeta.forEach((g, i) => {
-    const t = svgEl("text", { x: colX(i), y: y0 + 26, class: "lab-row-label", "text-anchor": "middle" }, layer);
-    t.textContent = g.name;
     const h = svgEl("g", {
-      class: `a-handle ${g.cls}`, tabindex: 0, role: "slider", "aria-label": `${g.name} average`,
+      class: `a-handle ${g.key}`, tabindex: 0, role: "slider", "aria-label": `${g.name} average`,
       "aria-valuemin": 5, "aria-valuemax": 95, "data-i": i,
-    }, handlesG);
-    const hw = NARROW ? 40 : 56, lw = NARROW ? 32 : 46;
-    svgEl("rect", { x: -hw, y: -22, width: hw * 2, height: 44, rx: 22, class: "a-handle-hit" }, h);
-    svgEl("line", { x1: -lw, x2: lw, y1: 0, y2: 0, class: "a-handle-line" }, h);
-    svgEl("circle", { r: 9, class: "a-handle-knob" }, h);
-    svgEl("text", NARROW ? { x: 0, y: -16, "text-anchor": "middle", class: "a-handle-label" } : { x: 54, y: 4, class: "a-handle-label" }, h);
+    }, handles);
+    svgEl("rect", { x: -26, y: 0, width: 52, height: 10, rx: 12, class: "a-handle-hit" }, h);
   });
 
   function render(ms) {
@@ -513,31 +516,42 @@ function initAnova(root, getAlpha) {
     const groups = ms.map((mu, i) => z[i].map((v) => mu + sd * v));
     const res = oneWayAnova(groups);
     const alpha = getAlpha();
-
-    grandLine.setAttribute("x1", x0); grandLine.setAttribute("x2", x1);
-    grandLine.setAttribute("y1", sy(res.grand)); grandLine.setAttribute("y2", sy(res.grand));
-    grandLabel.setAttribute("x", x1); grandLabel.setAttribute("y", sy(res.grand) - 6);
-
-    dotsG.replaceChildren();
-    groups.forEach((vals, i) => {
-      const g = svgEl("g", { class: `strip ${groupsMeta[i].cls}` }, dotsG);
-      const r = rng(31 + i);
-      for (const v of vals) svgEl("circle", { cx: colX(i) + (r() - 0.5) * (NARROW ? 46 : 70), cy: sy(v), r: vals.length > 30 ? 3.5 : 4.5 }, g);
+    layer.replaceChildren();
+    svgEl("line", { x1: x0, x2: x1, y1: y0, y2: y0, class: "lab-axis" }, layer);
+    for (const v of [0, 50, 100]) text(layer, sx(v), y0 + 84, v, "lab-tick");
+    // grand mean
+    svgEl("line", { x1: sx(res.grand), x2: sx(res.grand), y1: y0, y2: m.t - 10, class: "a-grand" }, layer);
+    text(layer, sx(res.grand) + 6, y0 - 8, "grand mean", "a-grand-label", "start");
+    const maxPdf = npdf(0, 0, sd);
+    // stagger labels onto separate rows when curves sit close together
+    const gap = NARROW ? 74 : 88;
+    const rows = [0, 0, 0];
+    const placed = [];
+    ms.map((v, i) => [v, i]).sort((p, q) => p[0] - q[0]).forEach(([v, i]) => {
+      let row = 0;
+      while (placed.some((pl) => pl.row === row && Math.abs(sx(pl.v) - sx(v)) < gap)) row++;
+      rows[i] = row;
+      placed.push({ v, row });
     });
-    [...handlesG.children].forEach((h, i) => {
-      h.setAttribute("transform", `translate(${colX(i)},${sy(ms[i])})`);
+    groups.forEach((vals, i) => drawGroup(layer, ui, {
+      key: groupsMeta[i].key, vals, mu: ms[i], sd, sx, y0, peakH: y0 - m.t - 16,
+      label: groupsMeta[i].name, seed: 31 + i, maxPdf, labelRow: rows[i], handle: true,
+    }));
+    // position the hit areas over each mean line
+    const peakTop = y0 - (y0 - m.t - 16) - 26;
+    [...handles.children].forEach((h, i) => {
+      h.setAttribute("transform", `translate(${sx(ms[i])},${peakTop})`);
+      const rect = h.querySelector("rect");
+      rect.setAttribute("height", y0 - peakTop + 4);
       h.setAttribute("aria-valuenow", Math.round(ms[i]));
-      h.querySelector(".a-handle-label").textContent = fmt(ms[i], 0);
     });
-    svg.setAttribute("aria-label", `Three groups. Averages ${ms.map((v) => Math.round(v)).join(", ")}. F ${fmt(res.F)}, p ${formatP(res.p)}.`);
+    svg.setAttribute("aria-label", `Three groups on one scale. Averages ${ms.map((v) => Math.round(v)).join(", ")}. F ${fmt(res.F)}, p ${formatP(res.p)}.`);
 
     const fc = fCrit(alpha, res.dfb, res.dfw);
     const xmax = Math.max(8, Math.min(30, Math.ceil(Math.max(res.F, fc) * 1.25)));
-    drawDistribution(dist, {
+    drawNull(layer2, ui2, {
       W: DW, H: DH, m: dm, xmin: 0.02, xmax, pdf: (x) => fPdf(x, res.dfb, res.dfw),
-      critLines: [fc], rejectRanges: [[fc, xmax]],
-      pRanges: res.F < xmax ? [[res.F, xmax]] : [],
-      observed: res.F, obsLabel: `your F = ${fmt(res.F)}`,
+      crit: [fc], rejectRanges: [[fc, xmax]], observed: res.F, label: `your F = ${fmt(res.F)}`,
     });
 
     split.style.setProperty("--between", res.eta2.toFixed(4));
@@ -545,51 +559,42 @@ function initAnova(root, getAlpha) {
     split.querySelector("[data-ss=within]").textContent = `Within groups ${100 - Math.round(res.eta2 * 100)}%`;
 
     stats.innerHTML = `
-      <dl class="lab-numbers">
-        <div><dt>F(${res.dfb}, ${res.dfw})</dt><dd>${fmt(res.F)}</dd></div>
-        <div><dt>p</dt><dd>${formatP(res.p)}</dd></div>
-        <div><dt>η²</dt><dd>${fmt(res.eta2)}</dd></div>
-        <div><dt>SS between</dt><dd>${Math.round(res.ssb)}</dd></div>
-        <div><dt>SS within</dt><dd>${Math.round(res.ssw)}</dd></div>
-        <div><dt>n / group</dt><dd>${z[0].length}</dd></div>
-      </dl>
-      <p class="lab-explain">F compares how far the group averages sit from each other with how spread out people are inside each group.
-      Pull the averages apart or tighten the spread to raise F.</p>
-      ${verdictHTML(res.p, alpha, "All three groups have the same average relief.")}`;
+      <p class="lab-lede">F compares how far apart the group averages are with how spread out people are inside each group. Right now <em>${Math.round(res.eta2 * 100)}%</em> of all the variation comes from which group someone is in.</p>
+      ${numbersHTML([[`F(${res.dfb}, ${res.dfw})`, fmt(res.F)], ["p", formatP(res.p)], ["η²", fmt(res.eta2)], ["SS between", Math.round(res.ssb)], ["SS within", Math.round(res.ssw)], ["n / group", z[0].length]])}
+      ${verdictHTML(res.p, alpha, "all three groups have the same average relief.")}`;
     popVerdict(stats, prevSig);
     prevSig = res.p < alpha;
   }
 
-  // drag handles
   let drag = null;
-  handlesG.addEventListener("pointerdown", (e) => {
+  handles.addEventListener("pointerdown", (e) => {
     const h = e.target.closest(".a-handle");
     if (!h) return;
     e.preventDefault();
     stop();
-    drag = { i: +h.dataset.i, id: e.pointerId };
+    drag = { i: +h.dataset.i, id: e.pointerId, dx: ix(toSvgPoint(svg, e).x) - means[+h.dataset.i] };
     h.classList.add("is-dragging");
     h.setPointerCapture(e.pointerId);
   });
-  handlesG.addEventListener("pointermove", (e) => {
+  handles.addEventListener("pointermove", (e) => {
     if (!drag || e.pointerId !== drag.id) return;
-    means[drag.i] = clamp(iy(toSvgPoint(svg, e).y), 5, 95);
+    means[drag.i] = clamp(ix(toSvgPoint(svg, e).x) - drag.dx, 5, 95);
     render(means);
   });
   const end = (e) => {
     if (!drag || e.pointerId !== drag.id) return;
-    handlesG.querySelector(".is-dragging")?.classList.remove("is-dragging");
+    handles.querySelector(".is-dragging")?.classList.remove("is-dragging");
     drag = null;
   };
-  handlesG.addEventListener("pointerup", end);
-  handlesG.addEventListener("pointercancel", end);
-  handlesG.addEventListener("keydown", (e) => {
+  handles.addEventListener("pointerup", end);
+  handles.addEventListener("pointercancel", end);
+  handles.addEventListener("keydown", (e) => {
     const h = e.target.closest(".a-handle");
     if (!h) return;
     const i = +h.dataset.i;
     const step = e.shiftKey ? 10 : 2;
-    if (e.key === "ArrowUp" || e.key === "ArrowRight") means[i] = clamp(means[i] + step, 5, 95);
-    else if (e.key === "ArrowDown" || e.key === "ArrowLeft") means[i] = clamp(means[i] - step, 5, 95);
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") means[i] = clamp(means[i] + step, 5, 95);
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") means[i] = clamp(means[i] - step, 5, 95);
     else return;
     e.preventDefault();
     render(means);
@@ -599,11 +604,11 @@ function initAnova(root, getAlpha) {
   nSlider.addEventListener("input", () => { nOut.textContent = nSlider.value; makeZ(); render(means); });
   root.querySelector("[data-a-resample]").addEventListener("click", () => { seed++; makeZ(); render(means); });
   root.querySelector("[data-a-same]").addEventListener("click", () => {
-    const from = [...means]; means = [55, 55, 55];
+    const from = [...means]; means = [54, 54, 54];
     stop(); stop = tween(from, means, render, 420);
   });
   root.querySelector("[data-a-apart]").addEventListener("click", () => {
-    const from = [...means]; means = [62, 74, 40];
+    const from = [...means]; means = [52, 76, 28];
     stop(); stop = tween(from, means, render, 420);
   });
 
@@ -622,17 +627,22 @@ export function initResearchLab() {
   const getAlpha = () => alpha;
   const panels = {};
 
-  // Tabs (WAI-ARIA tabs pattern)
   const tabs = [...root.querySelectorAll("[data-lab-tab]")];
+  const tabList = root.querySelector(".lab-tabs");
+  function placeIndicator(tab) {
+    tabList.style.setProperty("--tab-x", `${tab.offsetLeft}px`);
+    tabList.style.setProperty("--tab-w", `${tab.offsetWidth}px`);
+  }
+  window.addEventListener("resize", () => placeIndicator(tabs.find((t) => t.getAttribute("aria-selected") === "true") || tabs[0]));
+  document.fonts?.ready.then(() => placeIndicator(tabs.find((t) => t.getAttribute("aria-selected") === "true") || tabs[0]));
   function select(tab, focus) {
     tabs.forEach((t) => {
       const on = t === tab;
       t.setAttribute("aria-selected", on);
       t.tabIndex = on ? 0 : -1;
-      const panel = root.querySelector(`#${t.getAttribute("aria-controls")}`);
-      panel.hidden = !on;
+      root.querySelector(`#${t.getAttribute("aria-controls")}`).hidden = !on;
     });
-    root.querySelector(".lab-tabs").style.setProperty("--tab-index", tabs.indexOf(tab));
+    placeIndicator(tab);
     if (focus) tab.focus();
     panels[tab.dataset.labTab]?.refresh();
   }
@@ -655,7 +665,6 @@ export function initResearchLab() {
     });
   });
 
-  // Panels must be visible to measure nothing — charts use viewBox units, so init all now.
   panels.regression = initRegression(root.querySelector("#lab-regression"), getAlpha);
   panels.ttest = initTTest(root.querySelector("#lab-ttest"), getAlpha);
   panels.anova = initAnova(root.querySelector("#lab-anova"), getAlpha);
