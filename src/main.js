@@ -3,6 +3,8 @@ import { initGalaxy } from "./galaxy.js";
 import { initMinecraft } from "./minecraft.js";
 import { initWellbeing } from "./wellbeing.js";
 import { initResearchLab } from "./research-lab.js";
+import { initAbout } from "./about.js";
+import { initWhiteboard } from "./whiteboard.js";
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -288,7 +290,7 @@ function safe(fn, name) {
   document.documentElement.classList.add("js");
   safe(setupScrollAnimations, "reveals");
   safe(setupNav, "nav");
-  safe(setupSpotlight, "spotlight");
+  safe(initAbout, "about");
   safe(setupEmailHandler, "email link");
   safe(setupContactForm, "contact form");
   safe(initWellbeing, "well-being");
@@ -297,6 +299,7 @@ function safe(fn, name) {
   await waitForFonts();
   safe(layoutAndAnimateLetters, "hero letters");
   safe(buildAstroOverlay, "astro overlay");
+  safe(initWhiteboard, "whiteboard");
   if (window.THREE) {
     safe(initGalaxy, "galaxy");
     safe(initMinecraft, "minecraft");

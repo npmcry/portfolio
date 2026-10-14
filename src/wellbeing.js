@@ -65,6 +65,11 @@ export function initWellbeing() {
   const insight = root.querySelector(".wb-insight");
   let values = load();
   let active = 0;
+  const wrap = root.querySelector(".wb-wheel-wrap");
+  const progress = root.querySelector(".wb-progress");
+  const DONE_KEY = "wb-done-v1";
+  let done = (() => { try { return JSON.parse(localStorage.getItem(DONE_KEY)) || []; } catch { return []; } })();
+  const MOODS = ["", "rough", "rough", "wobbly", "wobbly", "okay", "okay", "good", "good", "thriving", "thriving"];
 
   // ---------------- Wheel ----------------
   const S = 440, C = S / 2, R = 150, MAX = 10;
@@ -91,6 +96,8 @@ export function initWellbeing() {
 
   const labels = el("g", {}, svg);
   const knobs = el("g", {}, svg);
+  const moodTag = el("g", { class: "wb-mood", "aria-hidden": "true" }, svg);
+  const moodText = el("text", { "text-anchor": "middle" }, moodTag);
   DIMENSIONS.forEach((d, i) => {
     const [lx, ly] = pt(i, MAX + 2.4);
     const a = Math.cos(angle(i));
@@ -130,6 +137,12 @@ export function initWellbeing() {
     [...labels.children].forEach((l, i) => l.classList.toggle("is-active", i === active));
     const avg = values.reduce((s, v) => s + v, 0) / values.length;
     centerNum.textContent = avg.toFixed(1);
+    // mood word beside the active point, and a glow that brightens with balance
+    const [mx, my] = pt(active, values[active] + 2.3);
+    moodText.setAttribute("x", mx);
+    moodText.setAttribute("y", my + 4);
+    moodText.textContent = `${Math.round(values[active])} · ${MOODS[Math.round(values[active])]}`;
+    wrap.style.setProperty("--balance", ((avg - 1) / 9).toFixed(3));
     updateInsight();
   }
 
@@ -223,7 +236,35 @@ export function initWellbeing() {
     renderPanel(animate);
   }
 
+  function renderProgress(celebrate) {
+    progress.innerHTML = `
+      <p class="wb-progress-label">${done.length === DIMENSIONS.length ? "Every area visited. Take that care with you today." : `Activities finished: ${done.length} of ${DIMENSIONS.length}`}</p>
+      <ol class="wb-stars">${DIMENSIONS.map((d) => `
+        <li class="${done.includes(d.key) ? "is-done" : ""}" style="--c:${d.color}" title="${d.name}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg>
+          <span class="sr-only">${d.name}${done.includes(d.key) ? " finished" : ""}</span>
+        </li>`).join("")}</ol>`;
+    if (celebrate && !reduceMotion.matches) {
+      for (let i = 0; i < 6; i++) {
+        const s = document.createElement("span");
+        s.className = "shooting-star";
+        s.style.setProperty("--top", `${10 + Math.random() * 50}%`);
+        s.style.setProperty("--delay", `${i * 140}ms`);
+        root.appendChild(s);
+        s.addEventListener("animationend", () => s.remove());
+      }
+    }
+  }
+
   function bump() {
+    const key = DIMENSIONS[active].key;
+    if (!done.includes(key)) {
+      done.push(key);
+      try { localStorage.setItem(DONE_KEY, JSON.stringify(done)); } catch {}
+      renderProgress(done.length === DIMENSIONS.length);
+      const star = progress.querySelectorAll(".wb-stars li")[active];
+      if (star && !reduceMotion.matches) star.animate([{ transform: "scale(0.6) rotate(-30deg)" }, { transform: "scale(1.25) rotate(8deg)" }, { transform: "none" }], { duration: 520, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+    }
     values[active] = Math.min(10, Math.round(values[active]) + 1);
     save(values);
     drawWheel();
@@ -255,6 +296,7 @@ export function initWellbeing() {
     }
   }
 
+  renderProgress(false);
   select(0, false);
 }
 

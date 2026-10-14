@@ -224,45 +224,33 @@
         </div>
       </section>
 
-      <section class="about" id="about">
+      <section class="about" id="about" aria-labelledby="about-title">
         <div class="about-container">
-          <h2 class="about-title">About Me</h2>
-          <p class="about-text">I'm a clinical psychology doctoral student at the University of the Pacific with a passion for technology and psychology.</p>
-        </div>
-        <div class="section-transition" aria-hidden="true">
-          <div class="transition-line"></div>
+          <div class="about-intro">
+            <h2 class="about-title" id="about-title">About Me</h2>
+            <p class="about-text">I'm a clinical psychology doctoral student at the University of the Pacific with a passion for technology and psychology.</p>
+            <p class="const-help">Every star is something about me. Tap them to draw my constellation.</p>
+            <div class="const-caption" aria-live="polite"><span>Tap a star to start.</span></div>
+            <p class="const-meta"><span class="const-count">0 of 6 stars</span> <button type="button" class="const-reset" hidden>Start over</button></p>
+          </div>
+          <div class="const-map">
+            <svg class="const-lines" aria-hidden="true"></svg>
+          </div>
         </div>
       </section>
 
-      <section class="projects" id="projects">
+      <section class="projects" id="projects" aria-labelledby="work-title">
         <div id="minecraftContainer" class="minecraft-container"></div>
         <div class="projects-container reveal">
-          <h2 class="projects-title">Selected work</h2>
-          <div class="projects-grid stagger">
-            <a href="https://paradisedental.netlify.app/" target="_blank" rel="noopener noreferrer" class="project-card" style="--accent: var(--mint)">
-              <svg class="project-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5c-1.5-1-3-1.5-4.5-1.5C5 4 3.5 6 3.5 8.5c0 3 1.5 5 2.5 8.5.5 2 1 3.5 2 3.5s1.5-1.5 2-3.5.6-2.5 2-2.5 1.5.5 2 2.5 1 3.5 2 3.5 1.5-1.5 2-3.5c1-3.5 2.5-5.5 2.5-8.5C20.5 6 19 4 16.5 4c-1.5 0-3 .5-4.5 1.5z"/></svg>
-              <span class="project-text"><span class="project-name">Paradise Dental</span><span class="project-desc">Modern dental practice website with appointment scheduling and patient resources</span></span>
-              <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
-            </a>
-            <a href="https://lvrobotics.org/" target="_blank" rel="noopener noreferrer" class="project-card" style="--accent: var(--pink)">
-              <svg class="project-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M9 2v2M15 20v2M9 20v2M20 15h2M20 9h2M2 15h2M2 9h2"/></svg>
-              <span class="project-text"><span class="project-name">LV Robotics</span><span class="project-desc">Community robotics organization platform for students and enthusiasts</span></span>
-              <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
-            </a>
-            <a href="https://cookiesarebad.netlify.app/" target="_blank" rel="noopener noreferrer" class="project-card" style="--accent: var(--butter)">
-              <svg class="project-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span class="project-text"><span class="project-name">Cookies</span><span class="project-desc">Educational web application exploring privacy and tracking technologies</span></span>
-              <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
-            </a>
-            <a href="https://github.com/npmcry" target="_blank" rel="noopener noreferrer" class="project-card" style="--accent: var(--lavender)">
-              <svg class="project-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-              <span class="project-text"><span class="project-name">GitHub Profile</span><span class="project-desc">Explore my open source contributions and personal coding projects</span></span>
-              <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
-            </a>
+          <div class="board-head">
+            <div>
+              <h2 class="projects-title" id="work-title">Selected work</h2>
+              <p class="section-lede">My project board. Drag the notes around, and decorate them with stickers.</p>
+            </div>
+            <button type="button" class="pill-btn ghost" data-board-tidy>Tidy up</button>
           </div>
-        </div>
-        <div class="section-transition" aria-hidden="true">
-          <div class="transition-line"></div>
+          <div class="board" role="region" aria-label="Project board with draggable sticky notes"></div>
+          <div class="sticker-tray" role="group" aria-label="Stickers. Drag one onto the board, or press it to add it. Drag a sticker back here to remove it."></div>
         </div>
       </section>
 
@@ -280,6 +268,7 @@
             </figure>
             <article class="wb-panel"></article>
           </div>
+          <div class="wb-progress" aria-live="polite"></div>
           <p class="wb-note">A playful reflection tool, not a clinical assessment.</p>
         </div>
         <div class="section-transition" aria-hidden="true">
@@ -294,12 +283,59 @@
             <p class="section-lede">Play with the statistics psychologists use every day. Drag the data and watch significance change.</p>
           </header>
 
+          <div class="lab-gate" data-lab-gate>
+            <div class="gate-doors" aria-hidden="true">
+              <div class="gate-door gate-left"><span class="gate-window"></span><span class="gate-handle"></span></div>
+              <div class="gate-door gate-right"><span class="gate-window"></span><span class="gate-handle"></span></div>
+              <div class="gate-sign">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7 15h10"/></svg>
+                <span>Research Lab</span>
+              </div>
+            </div>
+            <form class="gate-form" novalidate>
+              <div class="badge-rig">
+                <div class="id-badge" data-badge>
+                  <svg class="badge-lanyard" viewBox="0 0 120 90" aria-hidden="true"><path d="M20 0 L52 74 M100 0 L68 74" stroke="var(--mint)" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M20 0 L52 74 M100 0 L68 74" stroke="rgba(15,11,36,.35)" stroke-width="2" stroke-dasharray="2 6" fill="none"/></svg>
+                  <span class="badge-clip" aria-hidden="true"></span>
+                  <div class="badge-card">
+                    <div class="badge-top"><span>Research Lab</span><span>Visitor</span></div>
+                    <div class="badge-body">
+                      <div class="badge-photo" aria-hidden="true"><span class="badge-initials">?</span></div>
+                      <div class="badge-fields">
+                        <label for="visitor-name" class="badge-label">Name</label>
+                        <input id="visitor-name" name="visitor" type="text" autocomplete="given-name" maxlength="20" placeholder="Write your name" spellcheck="false">
+                        <span class="badge-pair"><span class="badge-label">Role</span><span class="badge-value">Research Assistant</span></span>
+                        <span class="badge-pair"><span class="badge-label">Clearance</span><span class="badge-value">Level 1 · Statistics</span></span>
+                      </div>
+                    </div>
+                    <div class="badge-bottom"><span class="badge-barcode" aria-hidden="true"></span><span class="badge-id">ID RL-0000</span></div>
+                  </div>
+                </div>
+                <div class="card-reader" aria-hidden="true">
+                  <span class="reader-led"></span>
+                  <span class="reader-slot"></span>
+                  <span class="reader-text">Scan badge</span>
+                </div>
+              </div>
+              <p class="gate-hint">Write your name on the badge, then drag it to the reader.</p>
+              <div class="gate-actions">
+                <button type="submit" class="pill-btn">Scan badge &amp; enter</button>
+                <button type="button" class="gate-skip" data-gate-skip>Skip, just let me in</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="lab-inside">
+          <div class="lab-badge" hidden>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17c1-2 2.5-3 4-3s3 1 4 3"/></svg>
+            <span>Visitor <strong class="lab-badge-name"></strong> · Research Assistant · <span class="lab-badge-id"></span></span>
+          </div>
           <div class="lab-toolbar">
             <div class="lab-tabs" role="tablist" aria-label="Analysis">
               <span class="lab-tab-indicator" aria-hidden="true"></span>
-              <button role="tab" id="tab-regression" aria-controls="lab-regression" aria-selected="true" data-lab-tab="regression">Regression</button>
-              <button role="tab" id="tab-ttest" aria-controls="lab-ttest" aria-selected="false" tabindex="-1" data-lab-tab="ttest">t-test</button>
-              <button role="tab" id="tab-anova" aria-controls="lab-anova" aria-selected="false" tabindex="-1" data-lab-tab="anova">ANOVA</button>
+              <button role="tab" id="tab-anova" aria-controls="lab-anova" aria-selected="true" data-lab-tab="anova"><span class="tab-kicker">Station 1</span>Therapy comparison</button>
+              <button role="tab" id="tab-ttest" aria-controls="lab-ttest" aria-selected="false" tabindex="-1" data-lab-tab="ttest"><span class="tab-kicker">Station 2</span>Mindfulness trial</button>
+              <button role="tab" id="tab-regression" aria-controls="lab-regression" aria-selected="false" tabindex="-1" data-lab-tab="regression"><span class="tab-kicker">Station 3</span>Sleep study</button>
             </div>
             <fieldset class="alpha-picker">
               <legend>Significance level α</legend>
@@ -309,62 +345,11 @@
             </fieldset>
           </div>
 
-          <div class="lab-panel" id="lab-regression" role="tabpanel" aria-labelledby="tab-regression" tabindex="0">
-            <div class="lab-grid">
-              <div class="lab-card lab-chart-card">
-                <p class="lab-formula" aria-label="Null hypothesis: the slope equals zero">H<sub>0</sub>: β = 0</p>
-                <h3 class="lab-card-title">Does sleep predict mood?</h3>
-                <p class="lab-hint">Drag a dot to move it. Tap empty space to add a person. Tap a dot to remove it.</p>
-                <svg class="reg-chart lab-svg" role="img"></svg>
-                <div class="lab-controls">
-                  <div class="seg" role="group" aria-label="Preset relationship">
-                    <button type="button" data-reg-preset="strong" aria-pressed="false">Strong link</button>
-                    <button type="button" data-reg-preset="weak" aria-pressed="false">Weak link</button>
-                    <button type="button" data-reg-preset="none" aria-pressed="false">No link</button>
-                  </div>
-                  <button type="button" class="pill-btn" data-reg-shuffle>New sample</button>
-                  <label class="toggle"><input type="checkbox" name="reg-band" checked><span>Confidence band</span></label>
-                  <label class="toggle"><input type="checkbox" name="reg-res"><span>Residuals</span></label>
-                </div>
-              </div>
-              <aside class="lab-card lab-stats reg-stats" aria-live="polite"></aside>
-            </div>
-          </div>
-
-          <div class="lab-panel" id="lab-ttest" role="tabpanel" aria-labelledby="tab-ttest" tabindex="0" hidden>
-            <div class="lab-grid">
-              <div class="lab-card lab-chart-card">
-                <p class="lab-formula" aria-label="Null hypothesis: mu one equals mu two">H<sub>0</sub>: μ<sub>1</sub> = μ<sub>2</sub></p>
-                <h3 class="lab-card-title">Does mindfulness raise well-being?</h3>
-                <div class="lab-sliders">
-                  <label class="range">
-                    <span>True effect (Cohen's d) <output data-out="t-d">0.5</output></span>
-                    <input type="range" name="t-d" min="0" max="1.5" step="0.1" value="0.5">
-                  </label>
-                  <label class="range">
-                    <span>People per group <output data-out="t-n">20</output></span>
-                    <input type="range" name="t-n" min="5" max="100" step="1" value="20">
-                  </label>
-                </div>
-                <svg class="t-strip lab-svg" role="img"></svg>
-                <h4 class="lab-sub">The t-statistic</h4>
-                <p class="lab-hint">If H₀ were true, t would land under this curve. The pink tails are where results count as significant.</p>
-                <svg class="t-dist lab-svg" role="img"></svg>
-                <div class="lab-controls">
-                  <button type="button" class="pill-btn" data-t-run>Run a new study</button>
-                  <button type="button" class="pill-btn ghost" data-t-many>Run 50 studies</button>
-                </div>
-                <div class="t-sim" aria-live="polite"></div>
-              </div>
-              <aside class="lab-card lab-stats t-stats" aria-live="polite"></aside>
-            </div>
-          </div>
-
-          <div class="lab-panel" id="lab-anova" role="tabpanel" aria-labelledby="tab-anova" tabindex="0" hidden>
+          <div class="lab-panel" id="lab-anova" role="tabpanel" aria-labelledby="tab-anova" tabindex="0">
             <div class="lab-grid">
               <div class="lab-card lab-chart-card">
                 <p class="lab-formula" aria-label="Null hypothesis: mu one equals mu two equals mu three">H<sub>0</sub>: μ<sub>1</sub> = μ<sub>2</sub> = μ<sub>3</sub></p>
-                <h3 class="lab-card-title">Which treatment helps most?</h3>
+                <h3 class="lab-card-title">Which treatment helps most? · One-way ANOVA</h3>
                 <p class="lab-hint">Drag a curve left or right to move that group's average, or focus it and use the arrow keys.</p>
                 <svg class="a-chart lab-svg" role="img"></svg>
                 <div class="ss-split" style="--between:0">
@@ -393,6 +378,64 @@
               <aside class="lab-card lab-stats a-stats" aria-live="polite"></aside>
             </div>
           </div>
+
+          <div class="lab-panel" id="lab-regression" role="tabpanel" aria-labelledby="tab-regression" tabindex="0" hidden>
+            <div class="lab-grid">
+              <div class="lab-card lab-chart-card">
+                <p class="lab-formula" aria-label="Null hypothesis: the slope equals zero">H<sub>0</sub>: β = 0</p>
+                <h3 class="lab-card-title">Does sleep predict mood? · Linear regression</h3>
+                <p class="lab-hint">Drag a dot to move it. Tap empty space to add a person. Tap a dot to remove it.</p>
+                <svg class="reg-chart lab-svg" role="img"></svg>
+                <div class="lab-controls">
+                  <div class="seg" role="group" aria-label="Preset relationship">
+                    <button type="button" data-reg-preset="strong" aria-pressed="false">Strong link</button>
+                    <button type="button" data-reg-preset="weak" aria-pressed="false">Weak link</button>
+                    <button type="button" data-reg-preset="none" aria-pressed="false">No link</button>
+                  </div>
+                  <button type="button" class="pill-btn" data-reg-shuffle>New sample</button>
+                  <label class="toggle"><input type="checkbox" name="reg-band" checked><span>Confidence band</span></label>
+                  <label class="toggle"><input type="checkbox" name="reg-res"><span>Residuals</span></label>
+                </div>
+              </div>
+              <aside class="lab-card lab-stats reg-stats" aria-live="polite"></aside>
+            </div>
+          </div>
+
+          <div class="lab-panel" id="lab-ttest" role="tabpanel" aria-labelledby="tab-ttest" tabindex="0" hidden>
+            <div class="lab-grid">
+              <div class="lab-card lab-chart-card">
+                <p class="lab-formula" aria-label="Null hypothesis: mu one equals mu two">H<sub>0</sub>: μ<sub>1</sub> = μ<sub>2</sub></p>
+                <h3 class="lab-card-title">Does mindfulness raise well-being? · Independent t-test</h3>
+                <div class="lab-sliders">
+                  <label class="range">
+                    <span>True effect (Cohen's d) <output data-out="t-d">0.5</output></span>
+                    <input type="range" name="t-d" min="0" max="1.5" step="0.1" value="0.5">
+                  </label>
+                  <label class="range">
+                    <span>People per group <output data-out="t-n">20</output></span>
+                    <input type="range" name="t-n" min="5" max="100" step="1" value="20">
+                  </label>
+                </div>
+                <svg class="t-strip lab-svg" role="img"></svg>
+                <h4 class="lab-sub">The t-statistic</h4>
+                <p class="lab-hint">If H₀ were true, t would land under this curve. The pink tails are where results count as significant.</p>
+                <svg class="t-dist lab-svg" role="img"></svg>
+                <div class="lab-controls">
+                  <button type="button" class="pill-btn" data-t-run>Run a new study</button>
+                  <button type="button" class="pill-btn ghost" data-t-many>Run 50 studies</button>
+                </div>
+                <div class="t-sim" aria-live="polite"></div>
+              </div>
+              <aside class="lab-card lab-stats t-stats" aria-live="polite"></aside>
+            </div>
+          </div>
+
+          <aside class="lab-notebook" aria-labelledby="nb-title">
+            <h3 id="nb-title">Lab notebook</h3>
+            <p class="nb-empty">Your findings will be logged here as you experiment.</p>
+            <ol class="nb-entries" aria-live="polite"></ol>
+          </aside>
+          </div>
         </div>
         <div class="section-transition" aria-hidden="true">
           <div class="transition-line"></div>
@@ -403,8 +446,10 @@
         <div id="galaxyContainer" class="galaxy-container"></div>
         <div class="contact-overlay"></div>
         <div class="contact-container reveal">
-          <h2 class="contact-title">Get in touch</h2>
-          <p class="contact-subtitle">Have a question or want to work together? I'd love to hear from you.</p>
+          <div class="contact-intro">
+            <h2 class="contact-title">Get in touch</h2>
+            <p class="contact-subtitle">Have a question or want to work together? I'd love to hear from you.</p>
+          </div>
           <form class="contact-form" id="contactForm" novalidate>
             <div class="form-group">
               <label for="name" class="form-label">Name</label>

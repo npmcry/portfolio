@@ -14,6 +14,8 @@ const NARROW = window.innerWidth < 600;
 const COLORS = { g1: "#9ff0d4", g2: "#b9a5ff", g3: "#ffb39a", ink: "#f4f1fb", reject: "#ff9fb0" };
 
 let uid = 0;
+// Set by initResearchLab: records a finding in the lab notebook.
+let logFinding = () => {};
 function svgEl(tag, attrs = {}, parent) {
   const el = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
@@ -266,6 +268,7 @@ function initRegression(root, getAlpha) {
       ${numbersHTML([["b", fmt(res.slope)], ["r", fmt(res.r)], ["R²", fmt(res.r2)], [`t(${res.df})`, fmt(res.t)], ["p", formatP(res.p)], ["n", res.n]])}
       ${verdictHTML(res.p, alpha, "sleep and mood are unrelated (the slope is 0).")}`;
     popVerdict(stats, prevSig);
+    if (prevSig !== null && prevSig !== (res.p < alpha)) logFinding("Sleep study", `b = ${fmt(res.slope)}, p ${res.p < 0.001 ? "< .001" : "= " + formatP(res.p)}`, res.p < alpha);
     prevSig = res.p < alpha;
     svg.setAttribute("aria-label", `Scatter plot of ${res.n} people, sleep against mood. Slope ${fmt(res.slope)}, p ${formatP(res.p)}.`);
   }
@@ -410,6 +413,7 @@ function initTTest(root, getAlpha) {
       ${numbersHTML([["Control M", fmt(res.ma, 1)], ["Mindful M", fmt(res.mb, 1)], [`t(${fmt(df, 1)})`, fmt(res.t)], ["p", formatP(res.p)], ["Cohen's d", fmt(res.d)], ["Power", `${Math.round(clamp(power, 0, 1) * 100)}%`]])}
       ${verdictHTML(res.p, alpha, "both groups have the same average well-being.")}`;
     popVerdict(stats, prevSig);
+    if (prevSig !== null && prevSig !== (res.p < alpha)) logFinding("Mindfulness trial", `t = ${fmt(res.t)}, p ${res.p < 0.001 ? "< .001" : "= " + formatP(res.p)}`, res.p < alpha);
     prevSig = res.p < alpha;
   }
 
@@ -440,6 +444,7 @@ function initTTest(root, getAlpha) {
       dots.push(p < alpha);
     }
     seed++;
+    logFinding("Mindfulness trial", `ran 50 studies: ${sig} significant`, null);
     sim.innerHTML = `
       <p><strong>${sig} of ${studies}</strong> studies found p &lt; α. ${d === 0
         ? "There is no real effect here, so every one of those is a <em>false positive</em> (Type I error). Expect about " + Math.round(alpha * 100) + "%."
@@ -563,6 +568,7 @@ function initAnova(root, getAlpha) {
       ${numbersHTML([[`F(${res.dfb}, ${res.dfw})`, fmt(res.F)], ["p", formatP(res.p)], ["η²", fmt(res.eta2)], ["SS between", Math.round(res.ssb)], ["SS within", Math.round(res.ssw)], ["n / group", z[0].length]])}
       ${verdictHTML(res.p, alpha, "all three groups have the same average relief.")}`;
     popVerdict(stats, prevSig);
+    if (prevSig !== null && prevSig !== (res.p < alpha)) logFinding("Therapy comparison", `F = ${fmt(res.F)}, p ${res.p < 0.001 ? "< .001" : "= " + formatP(res.p)}`, res.p < alpha);
     prevSig = res.p < alpha;
   }
 
@@ -664,6 +670,138 @@ export function initResearchLab() {
       Object.values(panels).forEach((p) => p.refresh());
     });
   });
+
+
+  // ---- Entrance: ID badge on a lanyard, card reader, sliding doors ----
+  const gate = root.querySelector("[data-lab-gate]");
+  const inside = root.querySelector(".lab-inside");
+  const badge = root.querySelector(".lab-badge");
+  const badgeId = `ID RL-${String(Math.floor(1000 + Math.random() * 9000))}`;
+  function showBadge(name) {
+    badge.querySelector(".lab-badge-name").textContent = name || "Guest";
+    badge.querySelector(".lab-badge-id").textContent = badgeId;
+    badge.hidden = false;
+  }
+  function openLab(name, animate) {
+    try { sessionStorage.setItem("lab-visitor", name || "Guest"); } catch {}
+    showBadge(name);
+    const finish = () => {
+      gate.hidden = true;
+      root.classList.add("is-inside");
+      placeIndicator(tabs.find((t) => t.getAttribute("aria-selected") === "true") || tabs[0]);
+      Object.values(panels).forEach((p) => p.refresh());
+    };
+    if (!animate || reduceMotion.matches) return finish();
+    gate.classList.add("is-opening");
+    setTimeout(finish, 900);
+  }
+  if (gate) {
+    const card = gate.querySelector("[data-badge]");
+    const input = gate.querySelector("#visitor-name");
+    const initials = gate.querySelector(".badge-initials");
+    const reader = gate.querySelector(".card-reader");
+    const readerText = gate.querySelector(".reader-text");
+    gate.querySelector(".badge-id").textContent = badgeId;
+    let scanning = false;
+
+    input.addEventListener("input", () => {
+      const parts = input.value.trim().split(/\s+/).filter(Boolean);
+      initials.textContent = parts.length ? parts.slice(0, 2).map((w) => w[0].toUpperCase()).join("") : "?";
+    });
+
+    // gentle 3D tilt that follows the pointer (fine pointers only)
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches && !reduceMotion.matches) {
+      card.addEventListener("pointermove", (e) => {
+        if (card.classList.contains("is-dragging")) return;
+        const r = card.getBoundingClientRect();
+        const rx = ((e.clientY - r.top) / r.height - 0.5) * -10;
+        const ry = ((e.clientX - r.left) / r.width - 0.5) * 12;
+        card.style.setProperty("--tilt", `rotateX(${rx}deg) rotateY(${ry}deg)`);
+      });
+      card.addEventListener("pointerleave", () => card.style.setProperty("--tilt", "rotateX(0deg) rotateY(0deg)"));
+    }
+
+    function scan() {
+      if (scanning) return;
+      scanning = true;
+      const name = input.value.trim().slice(0, 20);
+      if (!reduceMotion.matches) {
+        // glide the badge to the reader, then swipe it down through the slot
+        const cr = card.getBoundingClientRect(), rr = reader.getBoundingClientRect();
+        const dx = rr.left + rr.width / 2 - (cr.left + cr.width / 2);
+        const dy = rr.top - (cr.top + cr.height * 0.35);
+        card.style.setProperty("--drag", `translate(${dx}px, ${dy}px)`);
+        card.classList.add("is-scanning");
+      }
+      setTimeout(() => {
+        reader.classList.add("is-granted");
+        readerText.textContent = `Access granted${name ? ", " + name : ""}`;
+      }, reduceMotion.matches ? 0 : 520);
+      setTimeout(() => {
+        openLab(name, true);
+        setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 950);
+      }, reduceMotion.matches ? 0 : 1100);
+    }
+
+    // drag the badge onto the reader
+    let drag = null;
+    card.addEventListener("pointerdown", (e) => {
+      if (e.target === input || scanning) return;
+      e.preventDefault();
+      drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY };
+      card.classList.add("is-dragging");
+      card.setPointerCapture(e.pointerId);
+    });
+    card.addEventListener("pointermove", (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      card.style.setProperty("--drag", `translate(${e.clientX - drag.sx}px, ${e.clientY - drag.sy}px)`);
+      card.style.setProperty("--tilt", `rotate(${(e.clientX - drag.sx) * 0.04}deg)`);
+      const rr = reader.getBoundingClientRect();
+      reader.classList.toggle("is-hover", e.clientX > rr.left - 30 && e.clientX < rr.right + 30 && e.clientY > rr.top - 40 && e.clientY < rr.bottom + 40);
+    });
+    const drop = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag = null;
+      card.classList.remove("is-dragging");
+      if (reader.classList.contains("is-hover")) {
+        reader.classList.remove("is-hover");
+        scan();
+      } else {
+        card.style.setProperty("--drag", "translate(0px, 0px)");
+        card.style.setProperty("--tilt", "rotateX(0deg) rotateY(0deg)");
+      }
+    };
+    card.addEventListener("pointerup", drop);
+    card.addEventListener("pointercancel", drop);
+
+    let returning = null;
+    try { returning = sessionStorage.getItem("lab-visitor"); } catch {}
+    if (returning) openLab(returning === "Guest" ? "" : returning, false);
+    gate.querySelector(".gate-form").addEventListener("submit", (e) => { e.preventDefault(); scan(); });
+    gate.querySelector("[data-gate-skip]").addEventListener("click", () => {
+      openLab("", true);
+      setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 950);
+    });
+  }
+
+  // ---- Lab notebook ----
+  const nb = root.querySelector(".nb-entries");
+  const nbEmpty = root.querySelector(".nb-empty");
+  let entryNo = 0;
+  logFinding = (station, detail, sig) => {
+    if (!nb) return;
+    entryNo++;
+    nbEmpty.hidden = true;
+    const li = document.createElement("li");
+    li.className = sig === true ? "is-sig" : sig === false ? "is-ns" : "";
+    const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    li.innerHTML = `<span class="nb-no">#${entryNo}</span><span class="nb-text"><strong></strong> <span></span></span><span class="nb-time">${time}</span>`;
+    li.querySelector("strong").textContent = station;
+    li.querySelector(".nb-text > span").textContent = sig === null ? detail : `${detail}, ${sig ? "significant" : "no longer significant"}`;
+    nb.prepend(li);
+    while (nb.children.length > 6) nb.lastChild.remove();
+    if (!reduceMotion.matches) li.animate([{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "none" }], { duration: 280, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+  };
 
   panels.regression = initRegression(root.querySelector("#lab-regression"), getAlpha);
   panels.ttest = initTTest(root.querySelector("#lab-ttest"), getAlpha);
