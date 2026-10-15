@@ -1,3 +1,4 @@
+import { labRoomSVG } from "./lab-room.js";
 // Research Lab: hands-on regression, t-test and one-way ANOVA.
 // Charts are drawn as thin glowing curves with particle dots on the night-sky background.
 import {
@@ -693,7 +694,17 @@ export function initResearchLab() {
     };
     if (!animate || reduceMotion.matches) return finish();
     gate.classList.add("is-opening");
-    setTimeout(finish, 900);
+    // doors slide open, then the lab switches its lights on before the stations appear
+    const arrive = root.querySelector(".lab-arrive");
+    setTimeout(() => {
+      if (!arrive) return finish();
+      arrive.innerHTML = `${labRoomSVG()}<p class="arrive-text"><span>Lights on…</span><strong>Welcome to the lab${name ? ", " + name : ""}</strong></p>`;
+      arrive.hidden = false;
+      arrive.getBoundingClientRect();
+      arrive.classList.add("is-playing");
+      setTimeout(() => arrive.classList.add("is-leaving"), 2700);
+      setTimeout(() => { arrive.hidden = true; arrive.className = "lab-arrive"; arrive.innerHTML = ""; finish(); }, 3150);
+    }, 900);
   }
   if (gate) {
     const card = gate.querySelector("[data-badge]");
@@ -723,8 +734,22 @@ export function initResearchLab() {
 
     function scan() {
       if (scanning) return;
-      scanning = true;
       const name = input.value.trim().slice(0, 20);
+      if (!name) {
+        // no name on the badge: the reader refuses it
+        reader.classList.remove("is-denied");
+        void reader.offsetWidth;
+        reader.classList.add("is-denied");
+        readerText.textContent = "Access denied. Write your name first";
+        card.style.setProperty("--drag", "translate(0px, 0px)");
+        card.style.setProperty("--tilt", "rotateX(0deg) rotateY(0deg)");
+        if (!reduceMotion.matches) card.animate([{ transform: "translateX(0)" }, { transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "translateX(-5px)" }, { transform: "none" }], { duration: 360 });
+        input.focus({ preventScroll: true });
+        clearTimeout(scan.t);
+        scan.t = setTimeout(() => { reader.classList.remove("is-denied"); readerText.textContent = "Scan badge"; }, 2600);
+        return;
+      }
+      scanning = true;
       if (!reduceMotion.matches) {
         // glide the badge to the reader, then swipe it down through the slot
         const cr = card.getBoundingClientRect(), rr = reader.getBoundingClientRect();
@@ -739,7 +764,7 @@ export function initResearchLab() {
       }, reduceMotion.matches ? 0 : 520);
       setTimeout(() => {
         openLab(name, true);
-        setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 950);
+        setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 4200);
       }, reduceMotion.matches ? 0 : 1100);
     }
 
@@ -780,7 +805,7 @@ export function initResearchLab() {
     gate.querySelector(".gate-form").addEventListener("submit", (e) => { e.preventDefault(); scan(); });
     gate.querySelector("[data-gate-skip]").addEventListener("click", () => {
       openLab("", true);
-      setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 950);
+      setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 4200);
     });
   }
 

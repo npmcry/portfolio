@@ -286,6 +286,7 @@
           </header>
 
           <div class="lab-gate" data-lab-gate>
+            <div class="lab-arrive" hidden></div>
             <div class="gate-doors" aria-hidden="true">
               <div class="gate-door gate-left"><span class="gate-window"></span><span class="gate-handle"></span></div>
               <div class="gate-door gate-right"><span class="gate-window"></span><span class="gate-handle"></span></div>
@@ -433,7 +434,10 @@
           </div>
 
           <aside class="lab-notebook" aria-labelledby="nb-title">
-            <h3 id="nb-title">Lab notebook</h3>
+            <div class="nb-cover">
+              <h3 id="nb-title">Lab notebook</h3>
+              <p class="nb-label"><span>R</span>Research Ruled · 6 mm · findings</p>
+            </div>
             <p class="nb-empty">Your findings will be logged here as you experiment.</p>
             <ol class="nb-entries" aria-live="polite"></ol>
           </aside>
