@@ -9,12 +9,6 @@ const PROJECTS = [
   { id: "github", name: "GitHub", desc: "Open source contributions and personal coding projects.", url: "https://github.com/npmcry", color: "lavender", pattern: "gingham" },
 ];
 
-// Starting layouts as fractions of the board (x, y, rotation in degrees).
-const LAYOUT = {
-  wide: { dental: [0.05, 0.1, -4], robotics: [0.3, 0.2, 3], cookies: [0.55, 0.08, -2], github: [0.75, 0.24, 5] },
-  narrow: { dental: [0.03, 0.03, -3], robotics: [0.5, 0.06, 3], cookies: [0.05, 0.36, 2], github: [0.5, 0.4, -4] },
-};
-
 // Original kawaii stickers, drawn in SVG.
 const FACE = (cx, cy, s = 1) => `
   <circle cx="${cx - 7 * s}" cy="${cy}" r="${2.2 * s}" fill="#2b2140"/>
@@ -72,11 +66,30 @@ export function initWhiteboard() {
     el.dataset.fx = x / board.clientWidth;
     el.dataset.fy = y / board.clientHeight;
   }
+  // Default scatter: a loose grid that fits the board's width, so notes never cover each other.
+  const ROT = { dental: -4, robotics: 3, cookies: -2, github: 5 };
+  function defaultSpots() {
+    const W = board.clientWidth, H = board.clientHeight - (narrow() ? 96 : 0);
+    const nw = notes[0].offsetWidth, nh = Math.max(...notes.map((n) => n.offsetHeight));
+    let cols = Math.max(1, Math.min(notes.length, Math.floor((W - 16) / (nw + 14))));
+    if (cols === 3 || narrow()) cols = 2;
+    const rows = Math.ceil(notes.length / cols);
+    const cw = W / cols, ch = H / rows;
+    const lift = [0.25, 0.6, 0.1, 0.7];
+    return notes.map((n, k) => {
+      const c = k % cols, r = Math.floor(k / cols);
+      const freeX = Math.max(0, cw - nw), freeY = Math.max(0, ch - nh);
+      const pad = 10;
+      const x = Math.max(pad, Math.min(W - nw - pad, c * cw + freeX * (rows > 1 ? (c % 2 ? 0.7 : 0.3) : 0.5)));
+      const y = r * ch + Math.min(freeY * lift[k % 4], 48 + (rows > 1 ? 0 : 60));
+      return [x / board.clientWidth, y / board.clientHeight, ROT[n.dataset.id] ?? 0];
+    });
+  }
   function layout(reset) {
-    const L = LAYOUT[narrow() ? "narrow" : "wide"];
-    notes.forEach((n) => {
+    const spots = defaultSpots();
+    notes.forEach((n, k) => {
       const saved = !reset && state.notes[n.dataset.id];
-      const [fx, fy, r] = saved || L[n.dataset.id];
+      const [fx, fy, r] = saved || spots[k];
       place(n, fx, fy, saved ? saved[2] : r);
     });
   }
@@ -259,7 +272,7 @@ export function initWhiteboard() {
     // a couple of starter stickers so visitors see what's possible
     const dental = notes[0], github = notes[3];
     addSticker("star", dental, 0.78, -0.12, 14, false).classList.add("is-stuck");
-    addSticker("planet", github, -0.12, 0.7, -10, false).classList.add("is-stuck");
+    addSticker("planet", github, 0.78, 0.74, -10, false).classList.add("is-stuck");
   }
   let lastNarrow = narrow();
   window.addEventListener("resize", () => {

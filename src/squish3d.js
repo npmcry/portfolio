@@ -1,4 +1,4 @@
-// Squish corner in 3D: a frosted gel cube branded "Psych", a bear-shaped pancake
+// Squish corner in 3D: a glossy gel cube branded "Psych", a bear-shaped pancake
 // stack with melting butter, and a soft butter stick. All geometry is built in code.
 // Press to dent, drag while pressing to stretch, tap to boing, drag the background to spin.
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -176,70 +176,103 @@ export function initSquish3D() {
       p.setY(i, y + H / 2 - top * (dimple + waves));
     }
     geo.computeVertexNormals();
-    setUV(geo, (x, y, z) => (z > -S * 0.18 ? [(x + S / 2) / S, y / H] : [0.01, 0.01]));
-    // fake light scattering inside the gel: milky and bright up top and in the middle,
-    // a little deeper toward the bottom edges
+    // fake light scattering inside the gel: brighter up top and in the middle
     {
       const pp = geo.attributes.position, cols = new Float32Array(pp.count * 3);
       for (let i = 0; i < pp.count; i++) {
         const x = pp.getX(i), y = pp.getY(i), z = pp.getZ(i);
         const up = smooth(0, H, y), mid = 1 - smooth(0.25, 0.95, Math.max(Math.abs(x), Math.abs(z)) / (S / 2));
-        const v = 0.8 + 0.14 * up + 0.08 * mid;
+        const v = 0.86 + 0.1 * up + 0.06 * mid;
         cols[i * 3] = cols[i * 3 + 1] = cols[i * 3 + 2] = Math.min(1, v);
       }
       geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
     }
 
-    const face = canvasTex(1024, 1024, (ctx, w, h) => {
-      ctx.fillStyle = "#e4e4e4"; ctx.fillRect(0, 0, w, h);
-      ctx.save();
-      ctx.translate(w * 0.6, h * 0.55); ctx.rotate(-0.12);
-      ctx.font = `${Math.round(w * 0.2)}px Pacifico, "Brush Script MT", cursive`;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillStyle = "#cfcfcf"; ctx.fillText("Psych", 5, 8);
-      ctx.fillStyle = "#ffffff"; ctx.fillText("Psych", 0, 0);
-      ctx.restore();
-    });
-    const bump = canvasTex(1024, 1024, (ctx, w, h) => {
-      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
-      ctx.save();
-      ctx.translate(w * 0.6, h * 0.55); ctx.rotate(-0.12);
-      ctx.font = `${Math.round(w * 0.2)}px Pacifico, "Brush Script MT", cursive`;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.filter = "blur(10px)"; ctx.fillStyle = "#fff"; ctx.fillText("Psych", 0, 0);
-      ctx.filter = "blur(3px)"; ctx.fillText("Psych", 0, 0);
-      ctx.restore();
-    }, false);
-    cube.textures = [face, bump];
+    // A soft studio reflection map, used only by the gel so it reads glossy and wet.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envScene = new THREE.Scene();
+    {
+      const { tex: sky } = canvasTex(64, 256, (ctx, w, h) => {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, "#b9aee0"); g.addColorStop(0.5, "#6b6194"); g.addColorStop(1, "#1d1638");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      });
+      envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), new THREE.MeshBasicMaterial({ map: sky, side: THREE.BackSide })));
+      const box = (w, h, x, y, z, c = 0xffffff, k = 4) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k), side: THREE.DoubleSide }));
+        m.position.set(x, y, z); m.lookAt(0, 0, 0); envScene.add(m);
+      };
+      box(5, 2.2, 3, 6, 4);           // big key softbox above-right
+      box(1.2, 5, -6, 1.5, 3);         // tall strip on the left
+      box(4, 0.8, 0, 2, -7, 0xd9ccff, 2); // lavender rim behind
+      box(2.4, 1.2, -3, 5, 5, 0xffffff, 3); // small window up-left for a second sparkle
+    }
+    const envMap = pmrem.fromScene(envScene, 0.05).texture;
+    pmrem.dispose();
 
     const c0 = CUBE_COLORS[0];
+    // the gel skin: tinted, clear and glossy, so you can see into it
     cube.shell = new THREE.MeshPhysicalMaterial({
-      color: lin(c0.hex), map: face.tex, bumpMap: bump.tex, bumpScale: 0.06, vertexColors: true,
-      roughness: 0.42, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.5,
-      transparent: true, opacity: 0.84, emissive: lin(c0.hex), emissiveIntensity: 0.16,
+      color: lin(c0.hex), vertexColors: true, envMap, envMapIntensity: 1.35,
+      roughness: 0.06, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.03, reflectivity: 0.7,
+      transparent: true, opacity: 0.5, emissive: lin(c0.hex), emissiveIntensity: 0.08,
     });
-    // the inside walls, seen through the front: a milky glow that gives the gel depth
-    cube.inner = new THREE.MeshStandardMaterial({
-      color: lin(c0.core), emissive: lin(c0.hex), emissiveIntensity: 0.35, roughness: 0.8,
-      side: THREE.BackSide, transparent: true, opacity: 0.9, depthWrite: false,
+    // the far walls seen through the front: a soft glow that gives the gel body and depth
+    cube.inner = new THREE.MeshPhysicalMaterial({
+      color: lin(c0.core), emissive: lin(c0.hex), emissiveIntensity: 0.4, roughness: 0.2, envMap, envMapIntensity: 0.6,
+      side: THREE.BackSide, transparent: true, opacity: 0.46, depthWrite: false,
     });
     const inside = new THREE.Mesh(geo, cube.inner);
     inside.renderOrder = 1;
     cube.group.add(inside);
     const shell = new THREE.Mesh(geo, cube.shell);
-    shell.renderOrder = 2;
+    shell.renderOrder = 3;
     cube.add(shell, { hit: true });
 
-    const n = 140, gp = new Float32Array(n * 3);
+    // "Psych" sits on the front as a decal made from the shell's own front triangles.
+    // It shares the shell's vertices, so it squishes with the gel and leaves no seam.
+    {
+      const pos = geo.attributes.position, src = geo.index.array, idx = [];
+      const front = (i) => pos.getZ(i) > 0.05;
+      for (let i = 0; i < src.length; i += 3) if (front(src[i]) && front(src[i + 1]) && front(src[i + 2])) idx.push(src[i], src[i + 1], src[i + 2]);
+      const uv = new Float32Array(pos.count * 2);
+      for (let i = 0; i < pos.count; i++) { uv[i * 2] = (pos.getX(i) + S / 2) / S; uv[i * 2 + 1] = pos.getY(i) / H; }
+      const dg = new THREE.BufferGeometry();
+      dg.setAttribute("position", pos);
+      dg.setAttribute("normal", geo.attributes.normal);
+      dg.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+      dg.setIndex(idx);
+      const label = canvasTex(1024, 1024, (ctx, w, h) => {
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.translate(w * 0.56, h * 0.5); ctx.rotate(-0.12);
+        ctx.font = `${Math.round(w * 0.19)}px Pacifico, "Brush Script MT", cursive`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "rgba(60, 30, 90, 0.18)"; ctx.fillText("Psych", 6, 9);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.94)"; ctx.fillText("Psych", 0, 0);
+        ctx.restore();
+      });
+      cube.textures = [label];
+      const decal = new THREE.Mesh(dg, new THREE.MeshStandardMaterial({
+        map: label.tex, transparent: true, depthWrite: false, roughness: 0.35,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+      }));
+      decal.renderOrder = 4;
+      decal.frustumCulled = false;
+      cube.group.add(decal);
+    }
+
+    // glitter floating in the gel, drawn before the skin so it shows through it
+    const n = 220, gp = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
-      gp[i * 3] = (Math.random() - 0.5) * S * 0.78;
-      gp[i * 3 + 1] = 0.12 + Math.random() * (H - 0.35);
-      gp[i * 3 + 2] = (Math.random() - 0.5) * S * 0.78;
+      gp[i * 3] = (Math.random() - 0.5) * S * 0.8;
+      gp[i * 3 + 1] = 0.12 + Math.random() * (H - 0.32);
+      gp[i * 3 + 2] = (Math.random() - 0.5) * S * 0.8;
     }
     const gg = new THREE.BufferGeometry();
     gg.setAttribute("position", new THREE.BufferAttribute(gp, 3));
-    const glitter = new THREE.Points(gg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.028, transparent: true, opacity: 0.7, depthWrite: false }));
-    glitter.renderOrder = 3;
+    const glitter = new THREE.Points(gg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.032, transparent: true, opacity: 0.85, depthWrite: false }));
+    glitter.renderOrder = 2;
     cube.add(glitter, { normals: false });
     cube.group.add(blobShadow(2.9, 2.9));
   }

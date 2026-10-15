@@ -260,15 +260,15 @@
         <div class="section-inner reveal">
           <header class="section-head">
             <h2 class="psychology-title" id="wb-title">Well-Being Framework</h2>
-            <p class="section-lede">Six areas that keep people well. Drag the dots to map how you're doing, then try an activity.</p>
+            <p class="section-lede">Six areas that keep people well. Check in on each one, then try a small activity for the one that needs it.</p>
           </header>
-          <div class="wb-chips" role="group" aria-label="Choose an area"></div>
           <div class="wb-layout">
-            <figure class="wb-wheel-wrap">
-              <svg class="wb-wheel" role="group" aria-label="Wellness wheel. Each area is a slider from 1 to 10."></svg>
-              <figcaption class="wb-insight" aria-live="polite"></figcaption>
-            </figure>
-            <article class="wb-panel"></article>
+            <div class="wb-check">
+              <p class="wb-check-q">How has each area felt lately? Tap 1 to 5.</p>
+              <ol class="wb-list"></ol>
+              <div class="wb-insight" aria-live="polite"></div>
+            </div>
+            <article class="wb-panel" id="wb-panel"></article>
           </div>
           <div class="wb-progress" aria-live="polite"></div>
           <p class="wb-note">A playful reflection tool, not a clinical assessment.</p>
@@ -448,7 +448,7 @@
         <div class="section-inner reveal">
           <header class="section-head">
             <h2 class="lotl-title" id="lotl-title">Meet Lotl</h2>
-            <p class="section-lede">Axolotls can regrow what they lose. Lotl is a plush buddy who practices coping skills with you. Poke it, spin it, or give it a squeeze.</p>
+            <p class="section-lede">Axolotls can regrow what they lose. Lotl is a plush buddy who practices coping skills with you. Poke it, spin it, or hold it for a squeeze.</p>
           </header>
           <div class="lotl-layout">
             <div class="lotl-stage" tabindex="0" role="button" aria-label="Lotl the plush axolotl. Press Enter to pet it, or hold Space to squeeze it.">
@@ -467,10 +467,10 @@
               <p class="lotl-bubble" aria-live="polite"></p>
               <p class="lotl-tip">Tap to poke · Hold to squeeze · Drag to spin</p>
             </div>
-            <div class="lotl-coach">
-              <div class="lotl-skills wb-chips" role="group" aria-label="Coping skills"></div>
-              <div class="lotl-skill"></div>
-              <p class="lotl-progress"></p>
+            <div class="lotl-actions" role="group" aria-label="Things to do with Lotl">
+              <button type="button" class="lotl-act" data-act="breathe" aria-pressed="false">Breathe with me</button>
+              <button type="button" class="lotl-act" data-act="ground" aria-pressed="false">Ground me</button>
+              <button type="button" class="lotl-act" data-act="kind" aria-pressed="false">Kind words</button>
             </div>
           </div>
           <p class="lotl-note">Lotl teaches everyday coping skills and isn't a substitute for professional care. If you're in crisis in the US, call or text <a href="tel:988">988</a>.</p>

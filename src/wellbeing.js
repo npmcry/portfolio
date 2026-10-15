@@ -1,4 +1,4 @@
-// Well-Being Framework: a draggable wellness wheel + an inline activity for each dimension.
+// Well-Being Framework: a quick 1-5 check-in for six areas + an inline activity for each.
 const NS = "http://www.w3.org/2000/svg";
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
@@ -37,13 +37,14 @@ const ICONS = {
 const icon = (key, size = 20, cls = "") =>
   `<svg class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[key]}</svg>`;
 
-const STORE = "wb-wheel-v1";
+const STORE = "wb-check-v1";
+const LEVELS = ["", "Rough", "Low", "Okay", "Good", "Great"];
 function load() {
   try {
     const v = JSON.parse(localStorage.getItem(STORE));
-    if (Array.isArray(v) && v.length === DIMENSIONS.length) return v.map((n) => Math.min(10, Math.max(1, +n || 5)));
+    if (Array.isArray(v) && v.length === DIMENSIONS.length) return v.map((n) => Math.min(5, Math.max(1, Math.round(+n) || 3)));
   } catch {}
-  return [7, 6, 5, 6, 4, 7];
+  return [4, 4, 3, 4, 2, 4];
 }
 function save(values) {
   try { localStorage.setItem(STORE, JSON.stringify(values)); } catch {}
@@ -59,180 +60,91 @@ function el(tag, attrs = {}, parent) {
 export function initWellbeing() {
   const root = document.getElementById("psychology");
   if (!root) return;
-  const svg = root.querySelector(".wb-wheel");
-  const chips = root.querySelector(".wb-chips");
+  const list = root.querySelector(".wb-list");
   const panel = root.querySelector(".wb-panel");
   const insight = root.querySelector(".wb-insight");
+  const progress = root.querySelector(".wb-progress");
   let values = load();
   let active = 0;
-  const wrap = root.querySelector(".wb-wheel-wrap");
-  const progress = root.querySelector(".wb-progress");
   const DONE_KEY = "wb-done-v1";
   let done = (() => { try { return JSON.parse(localStorage.getItem(DONE_KEY)) || []; } catch { return []; } })();
-  const MOODS = ["", "rough", "rough", "wobbly", "wobbly", "okay", "okay", "good", "good", "thriving", "thriving"];
 
-  // ---------------- Wheel ----------------
-  const S = 440, C = S / 2, R = 150, MAX = 10;
-  const narrow = window.innerWidth < 600;
-  svg.setAttribute("viewBox", narrow ? `0 0 ${S} ${S}` : `-100 0 ${S + 200} ${S}`);
-  svg.classList.toggle("is-narrow", narrow);
-  const angle = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / DIMENSIONS.length;
-  const pt = (i, v) => [C + Math.cos(angle(i)) * (R * v) / MAX, C + Math.sin(angle(i)) * (R * v) / MAX];
+  // ---------------- Check-in list ----------------
+  list.innerHTML = DIMENSIONS.map((d, i) => `
+    <li class="wb-row" data-i="${i}" style="--c:${d.color}">
+      <button type="button" class="wb-name" aria-pressed="false" aria-controls="wb-panel">
+        ${icon(d.key, 20)}<span>${d.name}</span>
+      </button>
+      <div class="wb-rate" role="radiogroup" aria-label="${d.name}: ${d.prompt} Rate 1 to 5">
+        ${[1, 2, 3, 4, 5].map((v) => `<button type="button" role="radio" data-v="${v}" aria-label="${v} of 5, ${LEVELS[v]}" aria-checked="false" tabindex="-1"><i></i></button>`).join("")}
+      </div>
+      <span class="wb-level" aria-hidden="true"></span>
+    </li>`).join("");
+  const rows = [...list.children];
 
-  const rings = el("g", { class: "wb-rings" }, svg);
-  for (const v of [2, 4, 6, 8, 10]) {
-    el("polygon", { points: DIMENSIONS.map((_, i) => pt(i, v).join(",")).join(" ") }, rings);
-  }
-  DIMENSIONS.forEach((_, i) => {
-    const [x, y] = pt(i, MAX);
-    el("line", { x1: C, y1: C, x2: x, y2: y }, rings);
-  });
-  const shape = el("polygon", { class: "wb-shape" }, svg);
-  const center = el("g", { class: "wb-center" }, svg);
-  el("circle", { cx: C, cy: C, r: 34 }, center);
-  const centerNum = el("text", { x: C, y: C + 3, "text-anchor": "middle", class: "wb-center-num" }, center);
-  const centerLbl = el("text", { x: C, y: C + 19, "text-anchor": "middle", class: "wb-center-lbl" }, center);
-  centerLbl.textContent = "balance";
-
-  const labels = el("g", {}, svg);
-  const knobs = el("g", {}, svg);
-  const moodTag = el("g", { class: "wb-mood", "aria-hidden": "true" }, svg);
-  const moodText = el("text", { "text-anchor": "middle" }, moodTag);
-  DIMENSIONS.forEach((d, i) => {
-    const [lx, ly] = pt(i, MAX + 2.4);
-    const a = Math.cos(angle(i));
-    let lbl;
-    if (narrow) {
-      const [ix, iy] = pt(i, MAX + 2.1);
-      lbl = el("g", { class: "wb-label wb-label-icon", "data-i": i, transform: `translate(${ix - 14},${iy - 14}) scale(1.17)`, style: `color:${d.color}` }, labels);
-      lbl.innerHTML = ICONS[d.key];
-      el("title", {}, lbl).textContent = d.name;
-    } else {
-      lbl = el("text", {
-        x: lx, y: ly + 5, class: "wb-label", "data-i": i,
-        "text-anchor": Math.abs(a) < 0.2 ? "middle" : a > 0 ? "start" : "end",
-      }, labels);
-      lbl.textContent = d.name;
-    }
-    lbl.addEventListener("click", () => select(i, true));
-
-    const k = el("g", {
-      class: "wb-knob", tabindex: 0, role: "slider", "data-i": i,
-      "aria-label": d.name, "aria-valuemin": 1, "aria-valuemax": 10,
-      style: `--c:${d.color}`,
-    }, knobs);
-    el("circle", { r: 24, class: "wb-knob-hit" }, k);
-    el("circle", { r: 11, class: "wb-knob-dot" }, k);
-  });
-
-  function drawWheel() {
-    shape.setAttribute("points", values.map((v, i) => pt(i, v).join(",")).join(" "));
-    [...knobs.children].forEach((k, i) => {
-      const [x, y] = pt(i, values[i]);
-      k.setAttribute("transform", `translate(${x},${y})`);
-      k.setAttribute("aria-valuenow", Math.round(values[i]));
-      k.setAttribute("aria-valuetext", `${Math.round(values[i])} out of 10`);
-      k.classList.toggle("is-active", i === active);
+  function drawRows() {
+    rows.forEach((row, i) => {
+      const v = values[i];
+      row.classList.toggle("is-active", i === active);
+      row.querySelector(".wb-name").setAttribute("aria-pressed", i === active ? "true" : "false");
+      row.querySelector(".wb-level").textContent = LEVELS[v];
+      row.querySelectorAll("[role=radio]").forEach((b) => {
+        const n = +b.dataset.v;
+        b.classList.toggle("is-on", n <= v);
+        b.setAttribute("aria-checked", n === v ? "true" : "false");
+        b.tabIndex = n === v ? 0 : -1;
+      });
     });
-    [...labels.children].forEach((l, i) => l.classList.toggle("is-active", i === active));
-    const avg = values.reduce((s, v) => s + v, 0) / values.length;
-    centerNum.textContent = avg.toFixed(1);
-    // mood word beside the active point, and a glow that brightens with balance
-    const [mx, my] = pt(active, values[active] + 2.3);
-    moodText.setAttribute("x", mx);
-    moodText.setAttribute("y", my + 4);
-    moodText.textContent = `${Math.round(values[active])} · ${MOODS[Math.round(values[active])]}`;
-    wrap.style.setProperty("--balance", ((avg - 1) / 9).toFixed(3));
     updateInsight();
   }
 
   function updateInsight() {
-    const rounded = values.map(Math.round);
-    const lo = rounded.indexOf(Math.min(...rounded));
-    const hi = rounded.indexOf(Math.max(...rounded));
+    const lo = values.indexOf(Math.min(...values));
+    const even = values.every((v) => v === values[0]);
     const d = DIMENSIONS[lo];
-    insight.innerHTML = rounded[lo] === rounded[hi]
-      ? `<p>Your wheel is perfectly even. Pick any area to play.</p>`
-      : `<p>Your strongest area is <strong>${DIMENSIONS[hi].name}</strong>. <strong>${d.name}</strong> could use a little care.</p>
-         <button type="button" class="pill-btn" data-go="${lo}">Try the ${d.name} activity</button>`;
+    insight.innerHTML = even
+      ? `<p>Everything feels even. Pick any area to try its activity.</p>`
+      : `<p><strong>${d.name}</strong> could use a little care today.</p>
+         ${lo === active ? "" : `<button type="button" class="wb-go" data-go="${lo}" style="--c:${d.color}">Try its activity <span aria-hidden="true">→</span></button>`}`;
     insight.querySelector("[data-go]")?.addEventListener("click", (e) => {
       select(+e.currentTarget.dataset.go, true);
-      panel.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "nearest" });
+      if (window.innerWidth < 900) panel.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
     });
   }
 
-  // Drag knobs along their spoke
-  let drag = null;
-  function valueFromPointer(i, e) {
-    const p = svg.createSVGPoint();
-    p.x = e.clientX; p.y = e.clientY;
-    const q = p.matrixTransform(svg.getScreenCTM().inverse());
-    const ux = Math.cos(angle(i)), uy = Math.sin(angle(i));
-    const proj = (q.x - C) * ux + (q.y - C) * uy;
-    return Math.min(MAX, Math.max(1, (proj / R) * MAX));
-  }
-  knobs.addEventListener("pointerdown", (e) => {
-    const k = e.target.closest(".wb-knob");
-    if (!k) return;
-    e.preventDefault();
-    const i = +k.dataset.i;
-    drag = { i, id: e.pointerId };
-    k.classList.add("is-dragging");
-    k.setPointerCapture(e.pointerId);
-    if (i !== active) select(i, false);
-  });
-  knobs.addEventListener("pointermove", (e) => {
-    if (!drag || drag.id !== e.pointerId) return;
-    values[drag.i] = valueFromPointer(drag.i, e);
-    drawWheel();
-  });
-  const endDrag = (e) => {
-    if (!drag || drag.id !== e.pointerId) return;
-    values[drag.i] = Math.round(values[drag.i]);
-    knobs.querySelector(".is-dragging")?.classList.remove("is-dragging");
-    drag = null;
-    drawWheel();
+  function rate(i, v, focus) {
+    values[i] = v;
     save(values);
-  };
-  knobs.addEventListener("pointerup", endDrag);
-  knobs.addEventListener("pointercancel", endDrag);
-  knobs.addEventListener("keydown", (e) => {
-    const k = e.target.closest(".wb-knob");
-    if (!k) return;
-    const i = +k.dataset.i;
-    if (["ArrowUp", "ArrowRight"].includes(e.key)) values[i] = Math.min(10, Math.round(values[i]) + 1);
-    else if (["ArrowDown", "ArrowLeft"].includes(e.key)) values[i] = Math.max(1, Math.round(values[i]) - 1);
-    else if (e.key === "Enter" || e.key === " ") { select(i, true); e.preventDefault(); return; }
+    if (i !== active) select(i, true); else drawRows();
+    const b = rows[i].querySelector(`[data-v="${v}"]`);
+    if (focus) b.focus();
+    if (!reduceMotion.matches) b.querySelector("i").animate([{ transform: "scale(1)" }, { transform: "scale(1.4)" }, { transform: "scale(1)" }], { duration: 320, easing: EASE });
+  }
+
+  list.addEventListener("click", (e) => {
+    const row = e.target.closest(".wb-row");
+    if (!row) return;
+    const i = +row.dataset.i;
+    const r = e.target.closest("[role=radio]");
+    if (r) rate(i, +r.dataset.v, false);
+    else if (e.target.closest(".wb-name")) select(i, true);
+  });
+  list.addEventListener("keydown", (e) => {
+    const r = e.target.closest("[role=radio]");
+    if (!r) return;
+    const i = +r.closest(".wb-row").dataset.i;
+    let v = values[i];
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") v = Math.min(5, v + 1);
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") v = Math.max(1, v - 1);
     else return;
     e.preventDefault();
-    if (i !== active) select(i, false);
-    drawWheel();
-    save(values);
-  });
-  knobs.addEventListener("focusin", (e) => {
-    const k = e.target.closest(".wb-knob");
-    if (k && +k.dataset.i !== active) select(+k.dataset.i, false);
-  });
-
-  // ---------------- Chips ----------------
-  chips.innerHTML = DIMENSIONS.map((d, i) => `
-    <button type="button" class="wb-chip" data-i="${i}" style="--c:${d.color}" aria-pressed="false">
-      ${icon(d.key, 18)}${d.name}
-    </button>`).join("");
-  chips.addEventListener("click", (e) => {
-    const b = e.target.closest(".wb-chip");
-    if (b) select(+b.dataset.i, true);
+    rate(i, v, true);
   });
 
   // ---------------- Panel ----------------
   function select(i, animate) {
     active = i;
-    [...chips.children].forEach((c, j) => c.setAttribute("aria-pressed", j === i ? "true" : "false"));
-    const activeChip = chips.children[i];
-    if (activeChip && chips.scrollWidth > chips.clientWidth) {
-      chips.scrollTo({ left: activeChip.offsetLeft - 16, behavior: reduceMotion.matches ? "auto" : "smooth" });
-    }
-    drawWheel();
+    drawRows();
     renderPanel(animate);
   }
 
@@ -257,22 +169,22 @@ export function initWellbeing() {
   }
 
   function bump() {
-    const key = DIMENSIONS[active].key;
+    const i = active;
+    const key = DIMENSIONS[i].key;
     if (!done.includes(key)) {
       done.push(key);
       try { localStorage.setItem(DONE_KEY, JSON.stringify(done)); } catch {}
       renderProgress(done.length === DIMENSIONS.length);
-      const star = progress.querySelectorAll(".wb-stars li")[active];
-      if (star && !reduceMotion.matches) star.animate([{ transform: "scale(0.6) rotate(-30deg)" }, { transform: "scale(1.25) rotate(8deg)" }, { transform: "none" }], { duration: 520, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+      const star = progress.querySelectorAll(".wb-stars li")[i];
+      if (star && !reduceMotion.matches) star.animate([{ transform: "scale(0.6) rotate(-30deg)" }, { transform: "scale(1.25) rotate(8deg)" }, { transform: "none" }], { duration: 520, easing: EASE });
     }
-    values[active] = Math.min(10, Math.round(values[active]) + 1);
-    save(values);
-    drawWheel();
-    const k = knobs.children[active];
-    if (k && !reduceMotion.matches) {
-      k.querySelector(".wb-knob-dot").animate(
-        [{ transform: "scale(1)" }, { transform: "scale(1.35)" }, { transform: "scale(1)" }],
-        { duration: 420, easing: EASE });
+    // a finished activity nudges that area up one step
+    if (values[i] < 5) {
+      values[i] += 1;
+      save(values);
+      drawRows();
+      const dot = rows[i].querySelector(`[data-v="${values[i]}"] i`);
+      if (dot && !reduceMotion.matches) dot.animate([{ transform: "scale(1)" }, { transform: "scale(1.6)" }, { transform: "scale(1)" }], { duration: 480, easing: EASE });
     }
   }
 
@@ -287,7 +199,6 @@ export function initWellbeing() {
           <p>${d.blurb}</p>
         </div>
       </div>
-      <p class="wb-prompt">${d.prompt} <span>Drag its dot on the wheel.</span></p>
       <div class="wb-activity" aria-live="polite"></div>`;
     ACTIVITIES[d.key](panel.querySelector(".wb-activity"), bump);
     if (animate && !reduceMotion.matches) {
@@ -297,7 +208,7 @@ export function initWellbeing() {
   }
 
   renderProgress(false);
-  select(0, false);
+  select(values.indexOf(Math.min(...values)), false);
 }
 
 // ---------------- Activities ----------------
@@ -418,46 +329,103 @@ const ACTIVITIES = {
   },
 
   awareness(box, done) {
-    const phases = [["Breathe in", 4], ["Hold", 4], ["Breathe out", 4], ["Hold", 4]];
-    let timer = null, phase = 0, rounds = 0, left = 0;
+    const SIDE = 4, ROUNDS = 3, LOOP = SIDE * 4;
+    const WORDS = ["Breathe in", "Hold", "Breathe out", "Hold"];
+    const PHASES = ["in", "hold-in", "out", "hold-out"];
     box.innerHTML = `
       <div class="act act-breathe">
-        <div class="breath" data-phase="idle"><span class="breath-word">Ready?</span><span class="breath-count"></span></div>
-        <p class="act-status">Box breathing: four slow counts per side. Two rounds calms the body.</p>
+        <div class="bbox" data-phase="idle">
+          <svg class="bbox-svg" viewBox="0 0 240 240" aria-hidden="true">
+            <path class="bbox-track" d="M40 40 H200 V200 H40 Z"/>
+            <path class="bbox-trail" d="M40 40 H200 V200 H40 Z" pathLength="1"/>
+            <text class="bbox-side" data-s="0" x="120" y="27" text-anchor="middle">In</text>
+            <text class="bbox-side" data-s="1" x="0" y="0" text-anchor="middle" transform="translate(216 120) rotate(90)">Hold</text>
+            <text class="bbox-side" data-s="2" x="120" y="222" text-anchor="middle">Out</text>
+            <text class="bbox-side" data-s="3" x="0" y="0" text-anchor="middle" transform="translate(24 120) rotate(-90)">Hold</text>
+            <ellipse class="bbox-shadow" cx="120" cy="180" rx="50" ry="6"/>
+            <g class="bbox-toy">
+              <path class="bbox-flap bbox-flap-l" d="M74 108 L120 108 L114 96 L66 98 Z"/>
+              <path class="bbox-flap bbox-flap-r" d="M166 108 L120 108 L126 96 L174 98 Z"/>
+              <rect class="bbox-body" x="72" y="106" width="96" height="72" rx="7"/>
+              <rect class="bbox-lip" x="72" y="106" width="96" height="9" rx="4"/>
+              <rect class="bbox-tape" x="112" y="106" width="16" height="22" rx="1.5"/>
+              <g class="bbox-eyes-open"><ellipse cx="103" cy="146" rx="3" ry="3.8"/><ellipse cx="137" cy="146" rx="3" ry="3.8"/></g>
+              <g class="bbox-eyes-shut"><path d="M98 147 q5 -5 10 0"/><path d="M132 147 q5 -5 10 0"/></g>
+              <path class="bbox-mouth" d="M114 155 q6 6 12 0"/>
+              <circle class="bbox-blush" cx="93" cy="155" r="5"/><circle class="bbox-blush" cx="147" cy="155" r="5"/>
+            </g>
+            <circle class="bbox-dot" cx="40" cy="40" r="7"/>
+          </svg>
+        </div>
+        <p class="bbox-word"><strong>Ready?</strong><span class="bbox-count"></span></p>
+        <p class="act-status">Box breathing: follow the light around the box. Four counts per side, ${ROUNDS} rounds.</p>
         <button type="button" class="act-btn">Start breathing</button>
       </div>`;
-    const ball = box.querySelector(".breath");
-    const word = box.querySelector(".breath-word");
-    const cnt = box.querySelector(".breath-count");
+    const bb = box.querySelector(".bbox");
+    const track = box.querySelector(".bbox-track");
+    const trail = box.querySelector(".bbox-trail");
+    const dot = box.querySelector(".bbox-dot");
+    const word = box.querySelector(".bbox-word strong");
+    const cnt = box.querySelector(".bbox-count");
+    const status = box.querySelector(".act-status");
     const btn = box.querySelector(".act-btn");
-    const stop = () => {
-      clearInterval(timer); timer = null;
-      ball.dataset.phase = "idle"; word.textContent = rounds ? "Nice work" : "Ready?"; cnt.textContent = "";
-      btn.textContent = "Start breathing";
+    const sides = [...box.querySelectorAll(".bbox-side")];
+    const total = track.getTotalLength();
+    let raf = 0, t0 = 0, lastSide = -1, lastCount = -1;
+
+    const place = (p) => {
+      const pt = track.getPointAtLength(p * total);
+      dot.setAttribute("cx", pt.x.toFixed(2));
+      dot.setAttribute("cy", pt.y.toFixed(2));
+      trail.style.strokeDashoffset = 1 - p;
     };
-    const tick = () => {
-      if (left <= 0) {
-        if (phase === phases.length) {
-          phase = 0; rounds++;
-          if (rounds === 2) { done(); stop(); box.querySelector(".act-status").textContent = "Two rounds done. Notice how your shoulders feel now."; return; }
-        }
-        const [w, s] = phases[phase];
-        word.textContent = w;
-        ball.dataset.phase = ["in", "hold-in", "out", "hold-out"][phase];
-        left = s; phase++;
+    const reset = (msg) => {
+      cancelAnimationFrame(raf); raf = 0;
+      bb.dataset.phase = msg ? "done" : "idle";
+      sides.forEach((s) => s.classList.remove("is-on"));
+      place(0);
+      lastSide = lastCount = -1;
+      cnt.textContent = "";
+      btn.textContent = msg ? "Breathe again" : "Start breathing";
+    };
+    const frame = (now) => {
+      const e = (now - t0) / 1000;
+      if (e >= ROUNDS * LOOP) {
+        reset(true);
+        word.textContent = "All done";
+        status.textContent = "Three calm boxes. Notice how your shoulders feel now.";
+        done();
+        return;
       }
-      cnt.textContent = left;
-      left--;
+      const inLoop = e % LOOP;
+      const side = Math.floor(inLoop / SIDE);
+      const count = SIDE - Math.floor(inLoop % SIDE);
+      place(inLoop / LOOP);
+      if (side !== lastSide) {
+        lastSide = side;
+        bb.dataset.phase = PHASES[side];
+        word.textContent = WORDS[side];
+        sides.forEach((s, k) => s.classList.toggle("is-on", k === side));
+        status.textContent = `Round ${Math.floor(e / LOOP) + 1} of ${ROUNDS}`;
+      }
+      if (count !== lastCount) { lastCount = count; cnt.textContent = count; }
+      raf = requestAnimationFrame(frame);
     };
     btn.addEventListener("click", () => {
-      if (timer) return stop();
-      phase = 0; rounds = 0; left = 0;
+      if (raf) {
+        reset(false);
+        word.textContent = "Paused";
+        status.textContent = "Start again whenever you like.";
+        return;
+      }
       btn.textContent = "Stop";
-      tick();
-      timer = setInterval(tick, 1000);
+      t0 = performance.now();
+      lastSide = lastCount = -1;
+      raf = requestAnimationFrame(frame);
     });
+    place(0);
     // stop if the panel is replaced
-    new MutationObserver((_, obs) => { if (!box.isConnected) { clearInterval(timer); obs.disconnect(); } })
+    new MutationObserver((_, obs) => { if (!box.isConnected) { cancelAnimationFrame(raf); obs.disconnect(); } })
       .observe(document.body, { childList: true, subtree: true });
   },
 

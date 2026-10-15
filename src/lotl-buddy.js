@@ -200,7 +200,7 @@ export function createBuddy(host) {
     camera.aspect = w / h;
     const dist = camera.aspect < 0.9 ? 11.5 : 10;
     camera.position.set(0, 1.2, dist);
-    camera.lookAt(0, -0.05, -0.3);
+    camera.lookAt(0, 0.4, -0.3);
     camera.updateProjectionMatrix();
   }
   new ResizeObserver(resize).observe(host);
