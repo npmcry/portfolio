@@ -1175,28 +1175,28 @@ section { position: relative; }
 .lab-room .glow { opacity: 0; mix-blend-mode: screen; }
 /* lights off until the animation runs */
 .lab-room .wall-l, .lab-room .wall-r, .lab-room .panels, .lab-room .console, .lab-room .tube, .lab-room .vial, .lab-room .pipes { filter: brightness(0.35) saturate(0.6); }
-.lab-arrive.is-playing .lab-room .wall-l, .lab-arrive.is-playing .lab-room .wall-r, .lab-arrive.is-playing .lab-room .panels,
-.lab-arrive.is-playing .lab-room .console, .lab-arrive.is-playing .lab-room .tube, .lab-arrive.is-playing .lab-room .vial,
-.lab-arrive.is-playing .lab-room .pipes { animation: lightsOn 1100ms steps(1, end) 200ms forwards, lightsFade 500ms ease 1300ms forwards; }
+.gate-room.is-lit .lab-room .wall-l, .gate-room.is-lit .lab-room .wall-r, .gate-room.is-lit .lab-room .panels,
+.gate-room.is-lit .lab-room .console, .gate-room.is-lit .lab-room .tube, .gate-room.is-lit .lab-room .vial,
+.gate-room.is-lit .lab-room .pipes { animation: lightsOn 1100ms steps(1, end) 200ms forwards, lightsFade 500ms ease 1300ms forwards; }
 @keyframes lightsOn { 0% { filter: brightness(0.35) saturate(0.6); } 20% { filter: brightness(0.9); } 30% { filter: brightness(0.4); } 45% { filter: brightness(1); } 55% { filter: brightness(0.5); } 70%, 100% { filter: brightness(1) saturate(1); } }
 @keyframes lightsFade { to { filter: none; } }
-.lab-arrive.is-playing .glow { animation: glowOn 900ms ease 900ms forwards; }
+.gate-room.is-lit .glow { animation: glowOn 900ms ease 900ms forwards; }
 @keyframes glowOn { to { opacity: 1; } }
-.lab-arrive.is-playing .tube-liquid { animation: fillUp 1400ms var(--ease-out) 1000ms forwards; }
+.gate-room.is-lit .tube-liquid { animation: fillUp 1400ms var(--ease-out) 1000ms forwards; }
 @keyframes fillUp { to { transform: scaleY(1); } }
-.lab-arrive.is-playing .tube-bub { animation: bubUp 1600ms ease-in 1500ms infinite; }
-.lab-arrive.is-playing .b2 { animation-delay: 1800ms; } .lab-arrive.is-playing .b3 { animation-delay: 2100ms; } .lab-arrive.is-playing .b4 { animation-delay: 1650ms; }
+.gate-room.is-lit .tube-bub { animation: bubUp 1600ms ease-in 1500ms infinite; }
+.gate-room.is-lit .b2 { animation-delay: 1800ms; } .gate-room.is-lit .b3 { animation-delay: 2100ms; } .gate-room.is-lit .b4 { animation-delay: 1650ms; }
 @keyframes bubUp { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-80px); } }
-.lab-arrive.is-playing .screen { animation: screenOn 300ms steps(2) 1100ms forwards; }
-.lab-arrive.is-playing .s2 { animation-delay: 1350ms; }
-.lab-arrive.is-playing .s-pink { animation-name: screenOnPink; animation-delay: 1550ms; }
+.gate-room.is-lit .screen { animation: screenOn 300ms steps(2) 1100ms forwards; }
+.gate-room.is-lit .s2 { animation-delay: 1350ms; }
+.gate-room.is-lit .s-pink { animation-name: screenOnPink; animation-delay: 1550ms; }
 @keyframes screenOn { to { fill: #9ff0d4; filter: drop-shadow(0 0 6px #9ff0d4); } }
 @keyframes screenOnPink { to { fill: #ff9fd0; filter: drop-shadow(0 0 6px #ff9fd0); } }
 .arrive-text { margin: 0; display: grid; gap: 4px; text-align: center; }
 .arrive-text span { font-size: 0.9rem; color: var(--ink-3); }
 .arrive-text strong { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.3rem, 3vw, 1.8rem); letter-spacing: -0.02em; color: var(--ink); opacity: 0; }
-.lab-arrive.is-playing .arrive-text strong { animation: welcomeIn 500ms var(--ease-out) 1300ms forwards; }
-.lab-arrive.is-playing .arrive-text span { animation: welcomeOut 300ms ease 1200ms forwards; }
+.gate-room.is-lit .arrive-text strong { animation: welcomeIn 500ms var(--ease-out) 1300ms forwards; }
+.gate-room.is-lit .arrive-text span { animation: welcomeOut 300ms ease 1200ms forwards; }
 @keyframes welcomeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes welcomeOut { to { opacity: 0; height: 0; } }
 
@@ -1212,3 +1212,14 @@ section { position: relative; }
 .wb-activity .grow-chart { margin: 0 auto; }
 .lotl .section-head { text-align: center; margin-left: auto; margin-right: auto; }
 .lotl .section-lede { margin-left: auto; margin-right: auto; }
+
+/* Gate = the cube lab itself, lights off until the badge is scanned */
+.gate-room { display: grid; justify-items: center; gap: 12px; }
+.gate-room .lab-room { height: clamp(250px, 30vw, 340px); }
+.gate-room .arrive-text strong { min-height: 1.3em; }
+.gate-room.is-lit .arrive-text span { animation: welcomeOut 300ms ease 600ms forwards; }
+.gate-room.is-instant *, .gate-room.is-instant .lab-room * { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+.gate-room.is-instant .tube-bub { animation: bubUp 1600ms ease-in infinite !important; }
+.lab-gate.is-entered .gate-hint, .lab-gate.is-entered .gate-actions { display: none; }
+.lab-gate.is-entered .id-badge { cursor: default; }
+.lab-gate.is-entered #visitor-name { pointer-events: none; }

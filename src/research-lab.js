@@ -683,28 +683,42 @@ export function initResearchLab() {
     badge.querySelector(".lab-badge-id").textContent = badgeId;
     badge.hidden = false;
   }
+  let audio = null;
+  function beep(ok) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const notes = ok ? [[1320, 0], [1760, 0.13]] : [[220, 0], [196, 0.16]];
+      notes.forEach(([f, at]) => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.type = ok ? "sine" : "square"; o.frequency.value = f;
+        const t = audio.currentTime + at;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(ok ? 0.12 : 0.05, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+        o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.14);
+      });
+    } catch {}
+  }
+  const room = gate?.querySelector(".gate-room");
+  if (room) room.querySelector(".gate-room-art").innerHTML = labRoomSVG();
   function openLab(name, animate) {
     try { sessionStorage.setItem("lab-visitor", name || "Guest"); } catch {}
     showBadge(name);
-    const finish = () => {
-      gate.hidden = true;
-      root.classList.add("is-inside");
-      placeIndicator(tabs.find((t) => t.getAttribute("aria-selected") === "true") || tabs[0]);
-      Object.values(panels).forEach((p) => p.refresh());
-    };
-    if (!animate || reduceMotion.matches) return finish();
-    gate.classList.add("is-opening");
-    // doors slide open, then the lab switches its lights on before the stations appear
-    const arrive = root.querySelector(".lab-arrive");
-    setTimeout(() => {
-      if (!arrive) return finish();
-      arrive.innerHTML = `${labRoomSVG()}<p class="arrive-text"><span>Lights on…</span><strong>Welcome to the lab${name ? ", " + name : ""}</strong></p>`;
-      arrive.hidden = false;
-      arrive.getBoundingClientRect();
-      arrive.classList.add("is-playing");
-      setTimeout(() => arrive.classList.add("is-leaving"), 2700);
-      setTimeout(() => { arrive.hidden = true; arrive.className = "lab-arrive"; arrive.innerHTML = ""; finish(); }, 3150);
-    }, 900);
+    // the lab stays in view: its lights switch on and the stations open below
+    gate.classList.add("is-entered");
+    room.classList.toggle("is-instant", !animate || reduceMotion.matches);
+    room.classList.add("is-lit");
+    room.querySelector(".arrive-text strong").textContent = `Welcome to the lab${name ? ", " + name : ""}`;
+    const input = gate.querySelector("#visitor-name");
+    input.value = name || "Guest";
+    input.readOnly = true;
+    gate.querySelector(".badge-initials").textContent = (name || "Guest").split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+    const reader = gate.querySelector(".card-reader");
+    reader.classList.add("is-granted");
+    gate.querySelector(".reader-text").textContent = `Access granted${name ? ", " + name : ""}`;
+    root.classList.add("is-inside");
+    placeIndicator(tabs.find((t) => t.getAttribute("aria-selected") === "true") || tabs[0]);
+    Object.values(panels).forEach((p) => p.refresh());
   }
   if (gate) {
     const card = gate.querySelector("[data-badge]");
@@ -741,6 +755,7 @@ export function initResearchLab() {
         void reader.offsetWidth;
         reader.classList.add("is-denied");
         readerText.textContent = "Access denied. Write your name first";
+        beep(false);
         card.style.setProperty("--drag", "translate(0px, 0px)");
         card.style.setProperty("--tilt", "rotateX(0deg) rotateY(0deg)");
         if (!reduceMotion.matches) card.animate([{ transform: "translateX(0)" }, { transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "translateX(-5px)" }, { transform: "none" }], { duration: 360 });
@@ -761,17 +776,21 @@ export function initResearchLab() {
       setTimeout(() => {
         reader.classList.add("is-granted");
         readerText.textContent = `Access granted${name ? ", " + name : ""}`;
+        beep(true);
       }, reduceMotion.matches ? 0 : 520);
       setTimeout(() => {
+        // the badge springs back onto its lanyard and stays visible
+        card.classList.remove("is-scanning");
+        card.style.setProperty("--drag", "translate(0px, 0px)");
+        card.style.setProperty("--tilt", "rotateX(0deg) rotateY(0deg)");
         openLab(name, true);
-        setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 4200);
-      }, reduceMotion.matches ? 0 : 1100);
+      }, reduceMotion.matches ? 0 : 900);
     }
 
     // drag the badge onto the reader
     let drag = null;
     card.addEventListener("pointerdown", (e) => {
-      if (e.target === input || scanning) return;
+      if (e.target === input || scanning || gate.classList.contains("is-entered")) return;
       e.preventDefault();
       drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY };
       card.classList.add("is-dragging");
@@ -804,8 +823,8 @@ export function initResearchLab() {
     if (returning) openLab(returning === "Guest" ? "" : returning, false);
     gate.querySelector(".gate-form").addEventListener("submit", (e) => { e.preventDefault(); scan(); });
     gate.querySelector("[data-gate-skip]").addEventListener("click", () => {
+      beep(true);
       openLab("", true);
-      setTimeout(() => tabs[0].focus({ preventScroll: true }), reduceMotion.matches ? 0 : 4200);
     });
   }
 
