@@ -179,6 +179,140 @@ export function createBuddy(host) {
   shadow.scale.set(1, 1.15, 1);
   scene.add(shadow);
 
+  // ---------- Lotl's tank: sand, plush plants, moss balls and bubbles ----------
+  const tank = new THREE.Group();
+  scene.add(tank);
+  const FLOOR = -1.17;
+  {
+    // sand that fades out at the edges so the tank blends into the page
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const x = c.getContext("2d");
+    const g = x.createRadialGradient(128, 128, 30, 128, 128, 128);
+    g.addColorStop(0, "rgba(206,178,146,0.85)");
+    g.addColorStop(0.45, "rgba(186,160,140,0.6)");
+    g.addColorStop(0.8, "rgba(150,130,150,0.15)");
+    g.addColorStop(1, "rgba(150,130,150,0)");
+    x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 900; i++) {
+      const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 100;
+      x.fillStyle = `rgba(${Math.random() < 0.5 ? "160,130,110" : "235,220,200"},${0.25 + Math.random() * 0.3})`;
+      x.fillRect(128 + Math.cos(a) * r, 128 + Math.sin(a) * r, 1.6, 1.6);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    const sand = new THREE.Mesh(new THREE.CircleGeometry(3.3, 64), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    sand.rotation.x = -Math.PI / 2;
+    sand.position.set(0, FLOOR - 0.01, -0.9);
+    sand.scale.set(1.0, 0.8, 1);
+    sand.renderOrder = -1;
+    tank.add(sand);
+  }
+  // little pastel pebbles
+  const pebbleCols = [0xc9b6ff, 0xffc2d4, 0xa8d8ff, 0xfff1c2, 0xc9f7e6];
+  [[-1.9, 0.9], [-1.55, 1.15], [1.7, 1.0], [2.05, 0.7], [1.4, 1.3], [-2.4, -0.3], [2.6, -0.6], [-0.9, 1.5], [0.9, 1.55]].forEach(([x, z], i) => {
+    const r = 0.1 + (i % 3) * 0.035;
+    tank.add(mesh(sphere, mat(pebbleCols[i % pebbleCols.length], { bumpMap: null, roughness: 0.6 }), [r * 1.3, r * 0.7, r], [x, FLOOR + r * 0.5, z]));
+  });
+  // cute leafy plush plants: a short stem with round, puffy leaves fanning up and out
+  const plants = [];
+  const greens = [0x6fd27a, 0x58c46a, 0x8ee08a, 0x4fb862];
+  const lin = (c) => new THREE.Color(c).convertSRGBToLinear();
+  const leafMats = greens.map((c) => mat(lin(c), { bumpScale: 0.006, roughness: 0.85 }));
+  const veinMat = mat(lin(0x3f9a50), { bumpMap: null });
+  function leafyPlant(x, z, size, m) {
+    const root = new THREE.Group();
+    root.position.set(x, FLOOR, z);
+    root.scale.setScalar(size);
+    tank.add(root);
+    const sway = new THREE.Group();
+    root.add(sway);
+    const n = 7;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+      const h = 0.18 + (i % 3) * 0.16;
+      const tilt = 0.55 + (i % 3) * 0.25;           // inner leaves stand taller
+      const stem = new THREE.Group();
+      stem.position.y = 0.05;
+      stem.rotation.set(0, a, 0);
+      sway.add(stem);
+      const arm = new THREE.Group();
+      arm.rotation.z = -(Math.PI / 2 - tilt);
+      stem.add(arm);
+      arm.add(mesh(sphere, veinMat, [0.025, h * 0.5, 0.025], [0, h * 0.5, 0]));
+      const leaf = mesh(sphere, m, [0.15, 0.26, 0.07], [0, h + 0.2, 0]);
+      arm.add(leaf);
+    }
+    plants.push({ sway, phase: Math.random() * 6 });
+  }
+  leafyPlant(-2.3, -1.3, 1.45, leafMats[0]);
+  leafyPlant(-2.75, -0.35, 0.95, leafMats[2]);
+  leafyPlant(2.35, -1.4, 1.4, leafMats[1]);
+  leafyPlant(2.75, -0.45, 0.9, leafMats[3]);
+  leafyPlant(-1.15, -2.7, 1.0, leafMats[1]);
+  leafyPlant(1.25, -2.8, 1.1, leafMats[0]);
+  // a few tall grass blades in the back corners
+  for (const [x, z, k] of [[-1.85, -2.2, 0], [1.9, -2.3, 2], [-2.0, -1.9, 3]]) {
+    const tuft = new THREE.Group();
+    tuft.position.set(x, FLOOR, z);
+    tank.add(tuft);
+    for (let i = 0; i < 4; i++) {
+      const blade = new THREE.Group();
+      blade.rotation.set(0, i * 1.5, (i - 1.5) * 0.18);
+      blade.add(mesh(sphere, leafMats[(k + i) % 4], [0.06, 0.7 + (i % 2) * 0.25, 0.03], [0, 0.6, 0]));
+      tuft.add(blade);
+    }
+    plants.push({ sway: tuft, phase: Math.random() * 6 });
+  }
+  // fuzzy moss balls (marimo), a classic axolotl-tank friend
+  const mossFur = shellMats(0x4aa86c);
+  const moss = mat(0x3e9660);
+  fuzzy(tank, moss, mossFur, [0.36, 0.33, 0.36], [-1.75, FLOOR + 0.32, 0.35]);
+  fuzzy(tank, moss, mossFur, [0.22, 0.2, 0.22], [-1.25, FLOOR + 0.2, 0.75]);
+  fuzzy(tank, moss, mossFur, [0.28, 0.26, 0.28], [1.85, FLOOR + 0.26, 0.2]);
+
+  // bubbles: soft rings that drift up and wobble; Lotl blows a few when breathing out
+  const bubbleTex = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const x = c.getContext("2d");
+    const g = x.createRadialGradient(32, 32, 18, 32, 32, 30);
+    g.addColorStop(0, "rgba(255,255,255,0.05)");
+    g.addColorStop(0.8, "rgba(255,255,255,0.5)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = g; x.beginPath(); x.arc(32, 32, 30, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "rgba(255,255,255,0.9)"; x.beginPath(); x.ellipse(23, 21, 6, 4, -0.6, 0, Math.PI * 2); x.fill();
+    return new THREE.CanvasTexture(c);
+  })();
+  const bubbles = [];
+  const NB = narrow ? 10 : 18;
+  const sources = [[-2.3, -1.3], [2.35, -1.4], [-1.75, 0.35], [1.85, 0.2], [1.25, -2.8]];
+  function newBubble(b, fromMouth) {
+    if (fromMouth) {
+      const p = new THREE.Vector3();
+      smile.getWorldPosition(p);
+      b.sprite.position.set(p.x + (Math.random() - 0.5) * 0.2, p.y + 0.1, p.z + 0.2);
+    } else {
+      const [sx, sz] = sources[Math.floor(Math.random() * sources.length)];
+      b.sprite.position.set(sx + (Math.random() - 0.5) * 0.3, FLOOR + 0.3 + Math.random() * 0.4, sz);
+    }
+    b.size = 0.07 + Math.random() * (fromMouth ? 0.08 : 0.1);
+    b.speed = 0.35 + Math.random() * 0.35;
+    b.phase = Math.random() * 6;
+    b.x0 = b.sprite.position.x;
+    b.sprite.scale.setScalar(b.size);
+  }
+  for (let i = 0; i < NB; i++) {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex, transparent: true, depthWrite: false, opacity: 0.85 }));
+    const b = { sprite, mouth: false };
+    newBubble(b, false);
+    sprite.position.y += Math.random() * 3.5;
+    tank.add(sprite);
+    bubbles.push(b);
+  }
+  let mouthBubbles = 0;   // bubbles queued from Lotl's mouth
+  const TOP = 3.4;
+
   // ---------- state (simple springs) ----------
   const st = {
     squash: 1, squashV: 0, squashT: 1,
@@ -198,7 +332,7 @@ export function createBuddy(host) {
     const w = host.clientWidth || 1, h = host.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    const dist = camera.aspect < 0.9 ? 11.5 : 10;
+    const dist = camera.aspect < 1.1 ? 12.6 : 10.8;
     camera.position.set(0, 1.2, dist);
     camera.lookAt(0, 0.4, -0.3);
     camera.updateProjectionMatrix();
@@ -238,6 +372,19 @@ export function createBuddy(host) {
     st.nextBlink -= DT;
     if (st.nextBlink <= 0) { st.blink = 0.14; st.nextBlink = 2.5 + Math.random() * 3; }
     st.blink = Math.max(0, st.blink - DT);
+    // breathing out blows a few bubbles
+    if (st.breathTo === 0 && st.breathFrom > 0.5 && st.breath > 0.15 && Math.random() < 0.05) mouthBubbles = Math.min(mouthBubbles + 1, 4);
+    if (RM()) return;
+    for (const b of bubbles) {
+      const p = b.sprite.position;
+      p.y += b.speed * DT;
+      p.x = b.x0 + Math.sin(t * 2.2 + b.phase) * 0.06;
+      if (p.y > TOP) newBubble(b, false);
+    }
+    if (mouthBubbles > 0) {
+      mouthBubbles--;
+      newBubble(bubbles.reduce((a, b) => (b.sprite.position.y > a.sprite.position.y ? b : a)), true);
+    }
   }
 
   function apply() {
@@ -258,6 +405,10 @@ export function createBuddy(host) {
     for (const gl of gills) {
       gl.g.rotation.z = gl.baseZ + gl.side * (Math.sin(t * 1.8 + gl.phase) * amp * 0.5 - st.breath * 0.18 + st.droop * 0.35);
       gl.g.rotation.x = -0.25 + Math.sin(t * 1.4 + gl.phase) * amp * 0.3 - st.droop * 0.3;
+    }
+    for (const pl of plants) {
+      pl.sway.rotation.z = rm ? 0 : Math.sin(t * 1.1 + pl.phase) * 0.05;
+      pl.sway.rotation.x = rm ? 0 : Math.sin(t * 0.8 + pl.phase) * 0.03;
     }
     for (const e of eyes) e.scale.y = st.blink > 0 ? 0.12 : 1;
     cheekMat.opacity = 0.42 + st.blush * 0.5;

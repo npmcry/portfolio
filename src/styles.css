@@ -1012,12 +1012,13 @@ section { position: relative; }
 .lotl-stage {
   position: relative; aspect-ratio: 1 / 0.8; width: 100%;
   cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none;
-  border-radius: 28px; outline: none;
-  background: radial-gradient(60% 46% at 50% 72%, rgba(255, 184, 203, 0.16), transparent 70%);
+  outline: none;
+  background: radial-gradient(55% 42% at 50% 70%, rgba(168, 216, 255, 0.1), transparent 70%);
 }
 .lotl-stage:active { cursor: grabbing; }
-.lotl-stage:focus-visible { box-shadow: 0 0 0 2px var(--butter); }
+.lotl-stage:focus-visible { outline: 2px dashed var(--butter); outline-offset: -8px; }
 .lotl-canvas, .lotl-canvas canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.lotl-canvas { -webkit-mask-image: radial-gradient(ellipse 72% 70% at 50% 46%, #000 72%, transparent 100%); mask-image: radial-gradient(ellipse 72% 70% at 50% 46%, #000 72%, transparent 100%); }
 .lotl-fallback { display: none; position: absolute; inset: 12% 8%; width: 84%; height: 76%; --gill: #ff86a8; transition: transform 300ms var(--ease-out); }
 .lotl-fallback .lotl-gills { stroke: var(--gill); }
 .lotl-stage.no-3d .lotl-fallback { display: block; }
@@ -1049,7 +1050,7 @@ section { position: relative; }
 @media (hover: hover) and (pointer: fine) { .lotl-act:not([aria-pressed="true"]):hover { color: var(--ink); background: var(--raise); } }
 .lotl-note { margin: 36px auto 0; text-align: center; max-width: 640px; font-size: 0.85rem; color: var(--ink-3); }
 .lotl-note a { color: var(--ink-2); }
-@media (max-width: 600px) { .lotl-stage { aspect-ratio: 1 / 1.08; } }
+@media (max-width: 600px) { .lotl-stage { aspect-ratio: 1 / 0.94; } }
 
 /* ===================== Squish corner (3D) ===================== */
 .squish-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 8px; }

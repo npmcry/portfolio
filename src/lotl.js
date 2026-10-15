@@ -150,7 +150,7 @@ export function initLotl() {
   });
 
   // ---------- squeeze: press and hold Lotl ----------
-  let squeezeRaf = 0, squeezeT = 0;
+  let squeezeTimer = 0, squeezeT = 0;
   function squeezeStart() {
     if (current === "breathe") finish();
     squeezeT = performance.now();
@@ -159,13 +159,13 @@ export function initLotl() {
     const tick = () => {
       const left = Math.ceil((SQUEEZE_MS - (performance.now() - squeezeT)) / 1000);
       show(left > 0 ? `Squeeze me and clench your fists… ${left}` : "Now let go!");
-      squeezeRaf = requestAnimationFrame(tick);
     };
-    cancelAnimationFrame(squeezeRaf);
-    squeezeRaf = requestAnimationFrame(tick);
+    clearInterval(squeezeTimer);
+    tick();
+    squeezeTimer = setInterval(tick, 200);
   }
   function squeezeEnd() {
-    cancelAnimationFrame(squeezeRaf);
+    clearInterval(squeezeTimer);
     buddy.press(false);
     const held = performance.now() - squeezeT;
     if (held >= SQUEEZE_MS - 400) {
