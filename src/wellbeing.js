@@ -248,57 +248,111 @@ const ACTIVITIES = {
   },
 
   compassion(box, done) {
-    let n = 0;
-    const kind = ["You're doing better than you think.", "It's okay to rest.", "Thank you for trying.", "You matter.", "Mistakes mean you're learning."];
+    let sent = 0, busy = false;
+    const heart = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#ff8fab" stroke="#fff" stroke-width="2" stroke-linejoin="round" d="${"M12 20.5S3 15 3 8.8A4.6 4.6 0 0 1 12 6.6a4.6 4.6 0 0 1 9 2.2C21 15 12 20.5 12 20.5z"}"/></svg>`;
     box.innerHTML = `
-      <div class="act act-hearts">
-        <div class="hearts-stage" aria-hidden="true"></div>
-        <p class="act-status">Tap to send a kind note into the world.</p>
-        <button type="button" class="act-btn">Send kindness</button>
-        <p class="act-count"><span>0</span> sent</p>
+      <div class="act act-mail">
+        <div class="mail" data-state="closed">
+          <div class="mail-back"></div>
+          <div class="mail-card">
+            <p class="mail-to">Dear friend,</p>
+            <textarea class="mail-text" maxlength="110" rows="3" placeholder="Write something kind…" aria-label="Your kind note" tabindex="-1"></textarea>
+            <p class="mail-written" aria-hidden="true"></p>
+          </div>
+          <div class="mail-front"></div>
+          <div class="mail-flap"></div>
+          <button type="button" class="mail-seal" aria-label="Open the letter">${heart}</button>
+        </div>
+        <p class="act-status">Tap the sticker to open the letter.</p>
+        <button type="button" class="act-btn" hidden>Send it</button>
+        <p class="act-count">No notes sent yet</p>
       </div>`;
-    const stage = box.querySelector(".hearts-stage");
-    const status = box.querySelector(".act-status");
-    const count = box.querySelector(".act-count span");
-    box.querySelector(".act-btn").addEventListener("click", () => {
-      n++;
-      count.textContent = n;
-      status.textContent = `“${kind[(n - 1) % kind.length]}”`;
-      if (!reduceMotion.matches) {
-        const h = document.createElement("span");
-        h.className = "float-heart";
-        h.innerHTML = `<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">${ICONS.compassion}</svg>`;
-        h.style.left = `${20 + Math.random() * 60}%`;
-        stage.appendChild(h);
-        h.addEventListener("animationend", () => h.remove());
-      }
-      if (n === 5) done();
+    const mail = box.querySelector(".mail"), text = box.querySelector(".mail-text"), written = box.querySelector(".mail-written");
+    const status = box.querySelector(".act-status"), btn = box.querySelector(".act-btn"), seal = box.querySelector(".mail-seal");
+    const count = box.querySelector(".act-count");
+    const wait = (ms) => new Promise((r) => setTimeout(r, reduceMotion.matches ? Math.min(ms, 150) : ms));
+    const open = () => {
+      if (busy || mail.dataset.state !== "closed") return;
+      mail.dataset.state = "open";
+      text.tabIndex = 0;
+      status.textContent = "Write a kind note to someone, or to yourself.";
+      btn.hidden = false;
+      setTimeout(() => text.focus({ preventScroll: true }), 380);
+    };
+    seal.addEventListener("click", open);
+    btn.addEventListener("click", async () => {
+      const msg = text.value.trim();
+      if (!msg) { status.textContent = "Add a few words first. Even “thinking of you” counts."; text.focus(); return; }
+      if (busy) return;
+      busy = true; btn.hidden = true; text.tabIndex = -1;
+      written.textContent = msg;
+      mail.dataset.state = "writing";      // the typed note turns into handwriting
+      await wait(1500);
+      mail.dataset.state = "sealing";      // card tucks in, flap closes, sticker seals it
+      await wait(900);
+      mail.dataset.state = "sent";         // off it flies
+      status.textContent = "Sent! Kindness counts, even the small kind.";
+      sent++; count.textContent = `${sent} ${sent === 1 ? "note" : "notes"} sent`;
+      if (sent === 1) done();
+      await wait(800);
+      text.value = ""; written.textContent = "";
+      mail.dataset.state = "closed";
+      busy = false;
     });
   },
 
   growth(box, done) {
-    let xp = 0, level = 1;
-    const tasks = ["Read a page", "Ask a question", "Try something new", "Reflect on a mistake", "Teach someone"];
+    const W = 300, Hh = 140, MAX = 12;
+    const vals = [100];
+    let logs = 0;
+    const UPS = ["Learned something", "Asked a question", "Tried something new", "Practiced a skill"];
     box.innerHTML = `
-      <div class="act act-level">
-        <p class="level-badge">Level <strong>1</strong></p>
-        <div class="act-meter" style="--p:0"><span></span></div>
-        <div class="task-grid">${tasks.map((t) => `<button type="button" class="task-btn">${t}</button>`).join("")}</div>
+      <div class="act act-grow">
+        <div class="grow-head">
+          <span class="grow-ticker">GROW</span>
+          <strong class="grow-val">100</strong>
+          <span class="grow-chg">+0%</span>
+        </div>
+        <svg class="grow-chart" viewBox="0 0 ${W} ${Hh}" aria-hidden="true">
+          <path class="grow-base" d="M0 ${Hh - 0.5}H${W}"/>
+          <path class="grow-area"/><path class="grow-line"/><circle class="grow-dot" r="4.5"/>
+        </svg>
+        <p class="act-status">Log something you did today and watch your growth climb.</p>
+        <div class="task-grid">
+          ${UPS.map((t) => `<button type="button" class="task-btn" data-up="1">${t}</button>`).join("")}
+          <button type="button" class="task-btn task-dip">Had a rough day</button>
+        </div>
       </div>`;
-    const badge = box.querySelector(".level-badge strong");
-    const meter = box.querySelector(".act-meter");
-    box.querySelectorAll(".task-btn").forEach((b) => b.addEventListener("click", () => {
-      xp += 35;
-      b.classList.add("is-done");
-      if (xp >= 100) {
-        xp -= 100; level++;
-        badge.textContent = level;
-        if (!reduceMotion.matches) badge.parentElement.animate([{ transform: "scale(1.15)" }, { transform: "none" }], { duration: 300, easing: EASE });
-        done();
-      }
-      meter.style.setProperty("--p", xp / 100);
-      setTimeout(() => b.classList.remove("is-done"), 700);
-    }));
+    const area = box.querySelector(".grow-area"), line = box.querySelector(".grow-line"), dot = box.querySelector(".grow-dot");
+    const valEl = box.querySelector(".grow-val"), chg = box.querySelector(".grow-chg"), status = box.querySelector(".act-status");
+    function draw() {
+      const lo = Math.min(...vals) - 8, hi = Math.max(...vals) + 8;
+      const n = Math.max(vals.length, 6);
+      const pts = vals.map((v, i) => [(i / (n - 1)) * (W - 12) + 6, Hh - 10 - ((v - lo) / (hi - lo)) * (Hh - 24)]);
+      const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("");
+      line.setAttribute("d", d);
+      const last = pts.at(-1);
+      area.setAttribute("d", `${d}L${last[0].toFixed(1)} ${Hh}L${pts[0][0].toFixed(1)} ${Hh}Z`);
+      dot.setAttribute("cx", last[0]); dot.setAttribute("cy", last[1]);
+      const v = vals.at(-1), pct = Math.round(v - 100);
+      valEl.textContent = v;
+      chg.textContent = `${pct >= 0 ? "+" : ""}${pct}%`;
+      chg.classList.toggle("is-down", pct < 0);
+    }
+    box.querySelector(".task-grid").addEventListener("click", (e) => {
+      const b = e.target.closest(".task-btn");
+      if (!b) return;
+      const up = !!b.dataset.up;
+      const step = up ? 5 + Math.round(Math.random() * 6) : -(4 + Math.round(Math.random() * 4));
+      vals.push(vals.at(-1) + step);
+      if (vals.length > MAX) vals.shift();
+      draw();
+      if (!reduceMotion.matches) dot.animate([{ r: 4.5 }, { r: 8 }, { r: 4.5 }], { duration: 420, easing: EASE });
+      status.textContent = up ? `${b.textContent}: +${step}. Small steps add up.` : "Dips are normal. Look at the overall trend.";
+      logs++;
+      if (logs === 5) { status.textContent = "Five things logged. That line is you growing."; done(); }
+    });
+    draw();
   },
 
   understanding(box, done) {

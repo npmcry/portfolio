@@ -4,10 +4,11 @@
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 const CUBE_COLORS = [
-  { label: "Lavender", hex: 0xc7a3ec, core: 0xf6eaff, css: ["#ead9fb", "#b98ce6"] },
-  { label: "Aqua", hex: 0x7ccdf0, core: 0xe9f9ff, css: ["#d4f1fd", "#5bbfe9"] },
-  { label: "Pink", hex: 0xf48ab6, core: 0xffe6f1, css: ["#ffd3e6", "#ef6fa5"] },
-  { label: "Mint", hex: 0x8ee2c3, core: 0xeafff6, css: ["#d9fbee", "#5fd3a7"] },
+  { label: "Lavender glitter", hex: 0xc7a3ec, core: 0xf6eaff, glitter: true, css: ["#ead9fb", "#b98ce6"] },
+  { label: "Aqua", hex: 0x7ccdf0, core: 0xe9f9ff, glitter: false, css: ["#d4f1fd", "#5bbfe9"] },
+  { label: "Pink glitter", hex: 0xf48ab6, core: 0xffe6f1, glitter: true, css: ["#ffd3e6", "#ef6fa5"] },
+  { label: "Mint", hex: 0x8ee2c3, core: 0xeafff6, glitter: false, css: ["#d9fbee", "#5fd3a7"] },
+  { label: "Clear glitter", hex: 0xe4e2f6, core: 0xffffff, glitter: true, css: ["#ffffff", "#cfcbe8"] },
 ];
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -215,12 +216,12 @@ export function initSquish3D() {
     cube.shell = new THREE.MeshPhysicalMaterial({
       color: lin(c0.hex), vertexColors: true, envMap, envMapIntensity: 1.35,
       roughness: 0.06, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.03, reflectivity: 0.7,
-      transparent: true, opacity: 0.5, emissive: lin(c0.hex), emissiveIntensity: 0.08,
+      transparent: true, opacity: 0.24, emissive: lin(c0.hex), emissiveIntensity: 0.2,
     });
     // the far walls seen through the front: a soft glow that gives the gel body and depth
     cube.inner = new THREE.MeshPhysicalMaterial({
-      color: lin(c0.core), emissive: lin(c0.hex), emissiveIntensity: 0.4, roughness: 0.2, envMap, envMapIntensity: 0.6,
-      side: THREE.BackSide, transparent: true, opacity: 0.46, depthWrite: false,
+      color: lin(c0.core), emissive: lin(c0.hex), emissiveIntensity: 0.6, roughness: 0.2, envMap, envMapIntensity: 0.6,
+      side: THREE.BackSide, transparent: true, opacity: 0.18, depthWrite: false,
     });
     const inside = new THREE.Mesh(geo, cube.inner);
     inside.renderOrder = 1;
@@ -273,10 +274,12 @@ export function initSquish3D() {
     gg.setAttribute("position", new THREE.BufferAttribute(gp, 3));
     const glitter = new THREE.Points(gg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.032, transparent: true, opacity: 0.85, depthWrite: false }));
     glitter.renderOrder = 2;
+    cube.glitter = glitter;
     cube.add(glitter, { normals: false });
     cube.group.add(blobShadow(2.9, 2.9));
   }
   function setCubeColor(c) {
+    cube.glitter.visible = c.glitter;
     cube.shell.color.copy(lin(c.hex));
     cube.shell.emissive.copy(lin(c.hex));
     cube.inner.color.copy(lin(c.core));
@@ -713,7 +716,7 @@ export function initSquish3D() {
     show(btn.dataset.squish);
   });
   swatches.innerHTML = CUBE_COLORS.map((c, i) => `
-    <button type="button" class="squish-swatch" data-c="${i}" aria-pressed="${i === 0}" aria-label="${c.label}" style="--a:${c.css[0]};--b:${c.css[1]}"></button>`).join("");
+    <button type="button" class="squish-swatch" data-c="${i}" aria-pressed="${i === 0}" aria-label="${c.label}"${c.glitter ? " data-glitter" : ""} style="--a:${c.css[0]};--b:${c.css[1]}"></button>`).join("");
   swatches.addEventListener("click", (e) => {
     const s = e.target.closest(".squish-swatch");
     if (!s) return;
