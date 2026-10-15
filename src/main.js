@@ -5,6 +5,8 @@ import { initWellbeing } from "./wellbeing.js";
 import { initResearchLab } from "./research-lab.js";
 import { initAbout } from "./about.js";
 import { initWhiteboard } from "./whiteboard.js";
+import { initLotl } from "./lotl.js";
+import { initSquish3D } from "./squish3d.js";
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -296,6 +298,8 @@ function safe(fn, name) {
   safe(initWellbeing, "well-being");
   safe(initResearchLab, "research lab");
   safe(setupHeroObserver, "hero observer");
+  safe(initLotl, "lotl");
+  safe(initSquish3D, "squish");
   await waitForFonts();
   safe(layoutAndAnimateLetters, "hero letters");
   safe(buildAstroOverlay, "astro overlay");

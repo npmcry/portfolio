@@ -66,6 +66,7 @@ body {
   color: var(--ink);
   background: linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg0) 100%);
   overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -935,3 +936,123 @@ section { position: relative; }
   .shooting-star { display: none; }
   .js #research.is-inside .lab-inside { animation: none; }
 }
+
+/* ===================== Lotl, the plush axolotl ===================== */
+.lotl, .squish { padding: var(--section-gap) var(--gutter) 0; }
+.lotl-title, .squish-title { font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1; letter-spacing: -0.03em; color: var(--ink); }
+.lotl-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 64px); align-items: center; }
+.lotl-stage {
+  position: relative; aspect-ratio: 1 / 0.92; width: 100%;
+  cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  border-radius: 28px; outline: none;
+  background: radial-gradient(60% 46% at 50% 72%, rgba(255, 184, 203, 0.16), transparent 70%);
+}
+.lotl-stage:active { cursor: grabbing; }
+.lotl-stage:focus-visible { box-shadow: 0 0 0 2px var(--butter); }
+.lotl-canvas, .lotl-canvas canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.lotl-fallback { display: none; position: absolute; inset: 12% 8%; width: 84%; height: 76%; --gill: #ff86a8; transition: transform 300ms var(--ease-out); }
+.lotl-fallback .lotl-gills { stroke: var(--gill); }
+.lotl-stage.no-3d .lotl-fallback { display: block; }
+.lotl-fallback.is-boing { animation: boing 500ms var(--ease-out); }
+.lotl-fallback.is-squeezed { transform: scale(1.08, 0.84) translateY(8%); }
+.lotl-fallback.is-relaxed .lotl-gills { opacity: 0.6; }
+@keyframes boing { 30% { transform: scale(1.1, 0.86); } 60% { transform: scale(0.95, 1.08) translateY(-6%); } }
+.lotl-bubble {
+  position: absolute; top: 4%; left: 50%; z-index: 2; margin: 0;
+  max-width: min(320px, 86%); padding: 12px 18px; border-radius: 18px;
+  background: #fbf8ff; color: #241a38; font-size: 0.95rem; line-height: 1.4; text-align: center;
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.6);
+  opacity: 0; transform: translate(-50%, 6px) scale(0.96); transform-origin: bottom center;
+  transition: opacity 220ms ease, transform 260ms var(--ease-out);
+  pointer-events: none;
+}
+.lotl-bubble::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: inherit; transform: rotate(45deg); border-radius: 0 0 4px 0; }
+.lotl-bubble.is-on { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.lotl-tip { position: absolute; left: 0; right: 0; bottom: 2%; margin: 0; text-align: center; font-size: 0.85rem; color: var(--ink-3); pointer-events: none; }
+.lotl-coach { --c: var(--lavender); min-height: 440px; display: flex; flex-direction: column; }
+.lotl-skills { margin-bottom: 28px; }
+.lotl-skill { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.lotl-skill h3 { font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -0.03em; color: var(--c); }
+.lotl-skill > p { margin: 0; color: var(--ink-2); max-width: 46ch; }
+.lotl-skill .skill-big { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.35rem, 2.4vw, 1.75rem); line-height: 1.3; letter-spacing: -0.02em; color: var(--ink); min-height: 1.3em; }
+.lotl-skill .skill-sub { color: var(--ink-3); font-size: 0.92rem; }
+.lotl-skill .act-btn { background: var(--c); color: #1b1440; }
+.hold-btn { user-select: none; -webkit-user-select: none; touch-action: none; }
+.ground-dots { display: flex; flex-wrap: wrap; gap: 12px; }
+.ground-dot {
+  width: 48px; height: 48px; border-radius: 50%; cursor: pointer; padding: 0;
+  background: transparent; border: 1.5px solid var(--c);
+  transition: background-color var(--dur-ui) ease, transform var(--dur-press) var(--ease-out), box-shadow var(--dur-ui) ease;
+}
+.ground-dot:active { transform: scale(0.92); }
+.ground-dot[aria-pressed="true"] { background: var(--c); box-shadow: 0 0 14px var(--c); }
+.thought-list { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.thought {
+  text-align: left; min-height: 48px; padding: 10px 16px; border-radius: 14px; cursor: pointer;
+  font: inherit; font-size: 0.98rem; color: var(--ink-2); background: transparent; border: 1px solid var(--line-strong);
+  transition: border-color var(--dur-ui) ease, color var(--dur-ui) ease, background-color var(--dur-ui) ease;
+}
+.thought[aria-pressed="true"] { color: var(--ink); border-color: var(--c); background: var(--raise); }
+@media (hover: hover) and (pointer: fine) { .thought:hover { color: var(--ink); } }
+.reframe-out { display: grid; gap: 6px; }
+.reframe-out .trap { margin: 0; color: var(--ink-3); font-size: 0.92rem; }
+.reframe-out .trap strong { color: var(--c); font-weight: 600; }
+.reframe-out p { margin: 0; }
+.lotl-progress { margin: 26px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: var(--ink-3); font-size: 0.9rem; }
+.lotl-dots { display: inline-flex; gap: 8px; }
+.lotl-dots i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--c); }
+.lotl-dots i.is-done { background: var(--c); box-shadow: 0 0 8px var(--c); }
+.lotl-note { margin: 36px 0 0; font-size: 0.85rem; color: var(--ink-3); }
+.lotl-note a { color: var(--ink-2); }
+@media (max-width: 900px) {
+  .lotl-layout { grid-template-columns: 1fr; }
+  .lotl-coach { min-height: 0; }
+  .lotl-stage { aspect-ratio: 1 / 0.95; }
+}
+
+/* ===================== Squish corner (3D) ===================== */
+.squish-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 8px; }
+.squish-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.squish-choice {
+  min-height: 44px; padding: 0 18px; border-radius: 999px; cursor: pointer;
+  font: inherit; font-weight: 500; font-size: 0.95rem; color: var(--ink-2);
+  background: transparent; border: 1px solid var(--line-strong);
+  transition: background-color var(--dur-ui) ease, color var(--dur-ui) ease, transform var(--dur-press) var(--ease-out);
+}
+.squish-choice:active { transform: scale(0.96); }
+.squish-choice[aria-pressed="true"] { color: var(--bg0); background: var(--ink); border-color: transparent; }
+.squish-swatches { display: flex; gap: 8px; }
+.squish-swatches[hidden] { display: none; }
+.squish-swatch {
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer; padding: 0; border: 0;
+  background: radial-gradient(circle at 35% 30%, var(--a), var(--b));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  transition: transform var(--dur-press) var(--ease-out), box-shadow var(--dur-ui) ease;
+}
+.squish-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg0), 0 0 0 4px var(--ink); }
+.squish-swatch:active { transform: scale(0.9); }
+.squish-stage {
+  position: relative; border-radius: 28px; outline: none;
+  height: clamp(340px, 40vw, 480px);
+  background: radial-gradient(55% 60% at 50% 68%, rgba(255, 226, 154, 0.12), transparent 70%);
+}
+.squish-stage:focus-visible { box-shadow: 0 0 0 2px var(--butter); }
+.squish-3d, .squish-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.squish-gl { touch-action: none; cursor: grab; }
+.squish-stage.is-pressing .squish-gl { cursor: grabbing; }
+.squish-no3d { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; color: var(--ink-2); }
+.squish-stage.is-3d .squish-no3d { display: none; }
+.squish-meter { display: flex; align-items: center; gap: 14px; max-width: 520px; margin-top: 6px; }
+.squish-meter-label { font-size: 0.9rem; color: var(--ink-3); }
+.stress-meter { flex: 1; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.stress-meter span {
+  display: block; height: 100%; border-radius: inherit; transform-origin: left; transform: scaleX(var(--p));
+  background: linear-gradient(90deg, var(--mint), var(--butter) 55%, var(--pink));
+  transition: transform 160ms linear;
+}
+.stress-value { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.squish-msg { margin: 14px 0 0; color: var(--ink-2); min-height: 1.6em; }
+[data-stress-reset] { margin-top: 10px; }
+[data-stress-reset][hidden] { display: none; }
+@media (max-width: 600px) { .squish-stage { height: 330px; } }
+@media (prefers-reduced-motion: reduce) { .lotl-bubble { transition: opacity 200ms ease; transform: translate(-50%, 0); } }

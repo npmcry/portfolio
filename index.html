@@ -174,6 +174,8 @@
         <a href="#projects" class="nav-link">Projects</a>
         <a href="#psychology" class="nav-link">Well-being</a>
         <a href="#research" class="nav-link">Research Lab</a>
+        <a href="#lotl" class="nav-link">Lotl</a>
+        <a href="#squish" class="nav-link">Squish</a>
         <a href="#contact" class="nav-link">Contact</a>
       </div>
       <a href="https://www.linkedin.com/in/tunlv/" target="_blank" rel="noopener noreferrer" class="nav-cta">
@@ -439,6 +441,67 @@
         </div>
         <div class="section-transition" aria-hidden="true">
           <div class="transition-line"></div>
+        </div>
+      </section>
+
+      <section class="lotl" id="lotl" aria-labelledby="lotl-title">
+        <div class="section-inner reveal">
+          <header class="section-head">
+            <h2 class="lotl-title" id="lotl-title">Meet Lotl</h2>
+            <p class="section-lede">Axolotls can regrow what they lose. Lotl is a plush buddy who practices coping skills with you. Poke it, spin it, or give it a squeeze.</p>
+          </header>
+          <div class="lotl-layout">
+            <div class="lotl-stage" tabindex="0" role="button" aria-label="Lotl the plush axolotl. Press Enter to pet it, or hold Space to squeeze it.">
+              <div class="lotl-canvas"></div>
+              <svg class="lotl-fallback" viewBox="0 0 240 200" aria-hidden="true">
+                <g class="lotl-gills" fill="none" stroke-width="12" stroke-linecap="round">
+                  <path d="M58 72 C40 58 30 44 28 30"/><path d="M54 92 C34 88 20 82 12 72"/><path d="M58 110 C40 114 26 116 14 114"/>
+                  <path d="M182 72 C200 58 210 44 212 30"/><path d="M186 92 C206 88 220 82 228 72"/><path d="M182 110 C200 114 214 116 226 114"/>
+                </g>
+                <ellipse cx="120" cy="158" rx="70" ry="26" fill="#ffb8cb"/>
+                <ellipse cx="120" cy="96" rx="72" ry="56" fill="#ffb8cb"/>
+                <circle cx="94" cy="92" r="7" fill="#241a38"/><circle cx="146" cy="92" r="7" fill="#241a38"/>
+                <path d="M110 112 q10 9 20 0" stroke="#241a38" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <ellipse cx="78" cy="108" rx="10" ry="6" fill="#ff7fa0" opacity=".5"/><ellipse cx="162" cy="108" rx="10" ry="6" fill="#ff7fa0" opacity=".5"/>
+              </svg>
+              <p class="lotl-bubble" aria-live="polite"></p>
+              <p class="lotl-tip">Tap to poke · Hold to squeeze · Drag to spin</p>
+            </div>
+            <div class="lotl-coach">
+              <div class="lotl-skills wb-chips" role="group" aria-label="Coping skills"></div>
+              <div class="lotl-skill"></div>
+              <p class="lotl-progress"></p>
+            </div>
+          </div>
+          <p class="lotl-note">Lotl teaches everyday coping skills and isn't a substitute for professional care. If you're in crisis in the US, call or text <a href="tel:988">988</a>.</p>
+        </div>
+      </section>
+
+      <section class="squish" id="squish" aria-labelledby="squish-title">
+        <div class="section-inner reveal">
+          <header class="section-head">
+            <h2 class="squish-title" id="squish-title">Squish corner</h2>
+            <p class="section-lede">Pick a squishy and work out some stress. Press to squish, drag while pressing to stretch, tap for a boing, and drag the background to spin it.</p>
+          </header>
+          <div class="squish-toolbar">
+            <div class="squish-pick" role="group" aria-label="Choose a squishy">
+              <button type="button" class="squish-choice" data-squish="cube" aria-pressed="true">Psych cube</button>
+              <button type="button" class="squish-choice" data-squish="pancake" aria-pressed="false">Pancake stack</button>
+              <button type="button" class="squish-choice" data-squish="butter" aria-pressed="false">Butter stick</button>
+            </div>
+            <div class="squish-swatches" role="group" aria-label="Psych cube color"></div>
+          </div>
+          <div class="squish-stage" tabindex="0" aria-label="Squishy. Hold Space to squish it, press Enter to boing it, use the arrow keys to turn it.">
+            <div class="squish-3d"></div>
+            <p class="squish-no3d">Your browser can't show the 3D squishies. Try a recent version of Chrome, Safari, Edge or Firefox.</p>
+          </div>
+          <div class="squish-meter">
+            <span class="squish-meter-label">Stress</span>
+            <div class="stress-meter" role="meter" aria-label="Stress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" style="--p:1"><span></span></div>
+            <span class="stress-value">100%</span>
+          </div>
+          <p class="squish-msg" aria-live="polite">Squish until the stress meter runs out.</p>
+          <button type="button" class="pill-btn ghost" data-stress-reset hidden>Refill the meter</button>
         </div>
       </section>
 
