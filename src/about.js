@@ -1,99 +1,81 @@
-// About Me: a constellation. Each star is a fact; tapping one lights it and
-// draws the line from the last star. Light them all to finish the constellation.
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-const EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
+// About me: a commit line that types my story, a slim timeline to jump through it,
+// and a 3D keyboard that presses each key as the line is typed.
+import { createKeyboard } from "./about-keyboard.js";
 
-// x/y in % of the map. Edit the text freely: these are the facts visitors discover.
-const STARS = [
-  { x: 14, y: 30, title: "Doctor of Clinical Psychology", text: "PsyD student at the University of the Pacific." },
-  { x: 33, y: 14, title: "Psychology roots", text: "B.A. in Psychology from UNLV." },
-  { x: 52, y: 34, title: "Writes code", text: "Builds websites and tools, like Paradise Dental and LV Robotics." },
-  { x: 72, y: 18, title: "Games, studied seriously", text: "Dissertation research on video games and the mind." },
-  { x: 86, y: 52, title: "Clinical work", text: "Sees clients as part of clinical training." },
-  { x: 60, y: 76, title: "Bilingual", text: "Speaks English and Vietnamese." },
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+const STEPS = [
+  { label: "B.A. Psychology", type: "init:", side: "psych", msg: "B.A. in Psychology at UNLV" },
+  { label: "Cookies", type: "ship:", side: "code", msg: "Cookies, a web app that explains online tracking" },
+  { label: "Pet MD", type: "ship:", side: "code", msg: "Pet MD, a mobile app for pet medications" },
+  { label: "PsyD", type: "feat:", side: "psych", msg: "started the PsyD at University of the Pacific" },
+  { label: "Research", type: "research:", side: "psych", msg: "how video games affect the mind" },
+  { label: "Now", type: "now:", side: "code", msg: "studying minds, building for fun" },
 ];
 
 export function initAbout() {
   const root = document.getElementById("about");
-  const map = root?.querySelector(".const-map");
-  if (!map) return;
-  const lines = map.querySelector(".const-lines");
-  const caption = root.querySelector(".const-caption");
-  const count = root.querySelector(".const-count");
-  const reset = root.querySelector(".const-reset");
-  const lit = [];
+  if (!root) return;
+  const typeEl = root.querySelector(".log-type");
+  const msgEl = root.querySelector(".log-msg");
+  const list = root.querySelector(".about-timeline");
+  const kbHost = root.querySelector(".about-kb");
+  const kb = kbHost ? createKeyboard(kbHost) : null;
 
-  map.insertAdjacentHTML("beforeend", STARS.map((s, i) => `
-    <button type="button" class="const-star" data-i="${i}" style="left:${s.x}%;top:${s.y}%"
-      aria-label="Star ${i + 1}: ${s.title}" aria-pressed="false">
-      <span class="const-core" aria-hidden="true"></span>
-      <span class="const-tag" aria-hidden="true">${s.title}</span>
-    </button>`).join(""));
-  const stars = [...map.querySelectorAll(".const-star")];
+  list.innerHTML = STEPS.map((s, i) => `
+    <li class="tl-${s.side}"><button type="button" data-i="${i}" aria-label="${s.label}: ${s.type} ${s.msg}"><span class="tl-dot"></span><span class="tl-label">${s.label}</span></button></li>`).join("");
+  const items = [...list.querySelectorAll("li")];
 
-  function show(i) {
-    const s = STARS[i];
-    caption.innerHTML = `<strong>${s.title}</strong><span>${s.text}</span>`;
-    if (!reduceMotion.matches) {
-      caption.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: EASE });
-    }
-  }
+  let step = 0, timer = 0, visible = false, paused = false;
+  const show = (i) => items.forEach((li, k) => li.classList.toggle("is-on", k === i));
 
-  // Lines are drawn in real pixels so they stay crisp and solid at any size.
-  const segs = [];
-  function sizeLines() {
-    const w = map.clientWidth, h = map.clientHeight;
-    lines.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    [...lines.children].forEach((l, k) => {
-      const [a, b] = segs[k];
-      l.setAttribute("x1", (STARS[a].x / 100) * w); l.setAttribute("y1", (STARS[a].y / 100) * h);
-      l.setAttribute("x2", (STARS[b].x / 100) * w); l.setAttribute("y2", (STARS[b].y / 100) * h);
-    });
-  }
-  function drawLine(a, b) {
-    const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    lines.appendChild(l);
-    segs.push([a, b]);
-    sizeLines();
-    if (!reduceMotion.matches) {
-      const len = Math.hypot(l.x2.baseVal.value - l.x1.baseVal.value, l.y2.baseVal.value - l.y1.baseVal.value);
-      l.style.strokeDasharray = len;
-      l.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: 520, easing: EASE })
-        .finished.then(() => { l.style.strokeDasharray = "none"; });
-    }
-  }
-  window.addEventListener("resize", sizeLines);
-
-  function light(i) {
+  function type(i, instant) {
+    clearTimeout(timer);
+    step = i;
     show(i);
-    if (lit.includes(i)) return;
-    stars[i].classList.add("is-lit");
-    stars[i].setAttribute("aria-pressed", "true");
-    if (lit.length) drawLine(lit.at(-1), i);
-    lit.push(i);
-    count.textContent = `${lit.length} of ${STARS.length} stars`;
-    if (lit.length === STARS.length) {
-      setTimeout(() => {
-        drawLine(i, lit[0]);
-        map.classList.add("is-complete");
-        caption.innerHTML = `<strong>Constellation complete</strong><span>That's me: part clinician, part coder, all curious.</span>`;
-        reset.hidden = false;
-      }, reduceMotion.matches ? 0 : 420);
-    }
+    const s = STEPS[i];
+    typeEl.textContent = s.type;
+    typeEl.className = `log-type ${s.side}`;
+    if (instant || reduceMotion.matches) { msgEl.textContent = s.msg; schedule(); return; }
+    let n = 0;
+    msgEl.textContent = "";
+    const tick = () => {
+      if (n >= s.msg.length) { schedule(); return; }
+      const ch = s.msg[n++];
+      msgEl.textContent = s.msg.slice(0, n);
+      kb?.press(ch);
+      timer = setTimeout(tick, ch === " " ? 70 : 38 + Math.random() * 55);
+    };
+    tick();
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (!visible || paused) return;
+    timer = setTimeout(() => type((step + 1) % STEPS.length), 2600);
   }
 
-  stars.forEach((b, i) => {
-    b.addEventListener("click", () => light(i));
-    b.addEventListener("mouseenter", () => { if (lit.includes(i)) show(i); });
+  list.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) type(+b.dataset.i);
   });
-  reset.addEventListener("click", () => {
-    lit.length = 0;
-    segs.length = 0;
-    lines.replaceChildren();
-    stars.forEach((b) => { b.classList.remove("is-lit"); b.setAttribute("aria-pressed", "false"); });
-    map.classList.remove("is-complete");
-    count.textContent = `0 of ${STARS.length} stars`;
-    caption.innerHTML = `<span>Tap a star to start.</span>`;
-    reset.hidden = true;
+  list.addEventListener("pointerover", (e) => {
+    const b = e.target.closest("button");
+    if (b && e.pointerType !== "touch" && +b.dataset.i !== step) type(+b.dataset.i);
   });
+  list.addEventListener("pointerenter", () => { paused = true; clearTimeout(timer); });
+  list.addEventListener("pointerleave", () => { paused = false; schedule(); });
+
+  new IntersectionObserver(([e]) => {
+    const was = visible;
+    visible = e.isIntersecting;
+    kb?.setActive(visible);
+    if (visible && !was) type(step);
+    if (!visible) clearTimeout(timer);
+  }, { threshold: 0.2 }).observe(root);
+
+  // first paint: show the opening step fully so nothing looks empty
+  typeEl.textContent = STEPS[0].type;
+  typeEl.className = `log-type ${STEPS[0].side}`;
+  msgEl.textContent = STEPS[0].msg;
+  show(0);
 }

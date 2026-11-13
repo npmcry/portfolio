@@ -228,16 +228,29 @@
 
       <section class="about" id="about" aria-labelledby="about-title">
         <div class="about-container">
-          <div class="about-intro">
-            <h2 class="about-title" id="about-title">About Me</h2>
-            <p class="about-text">I'm a clinical psychology doctoral student at the University of the Pacific with a passion for technology and psychology.</p>
-            <p class="const-help">Every star is something about me. Tap them to draw my constellation.</p>
-            <div class="const-caption" aria-live="polite"><span>Tap a star to start.</span></div>
-            <p class="const-meta"><span class="const-count">0 of 6 stars</span> <button type="button" class="const-reset" hidden>Start over</button></p>
+          <header class="about-head">
+            <p class="about-kicker">About me</p>
+            <h2 class="about-title" id="about-title">I study how the mind works.<br><span>I build for fun.</span></h2>
+            <p class="about-log" aria-live="off"><span class="log-prompt">$ git log -1</span> <span class="log-type"></span> <span class="log-msg"></span><span class="log-caret" aria-hidden="true"></span></p>
+          </header>
+          <div class="about-body">
+            <div class="about-cols">
+              <div>
+                <p class="about-label psych">Psychology</p>
+                <p class="about-text">PsyD student at University of the Pacific. I see clients in clinical training and research how video games affect the mind.</p>
+                <p class="about-meta">B.A. Psychology, UNLV · English and Vietnamese</p>
+              </div>
+              <div>
+                <p class="about-label code">Engineering</p>
+                <p class="about-text">I design, build and ship apps end to end, like <a href="https://cookiesarebad.netlify.app/" target="_blank" rel="noopener noreferrer">Cookies</a> and <a href="https://github.com/npmcry/PetMD" target="_blank" rel="noopener noreferrer">Pet&nbsp;MD</a>.</p>
+                <ul class="about-skills" aria-label="Skills">
+                  <li>JavaScript</li><li>React</li><li>Next.js</li><li>Tailwind</li><li>Flutter</li><li>Dart</li><li>three.js</li><li>Git</li>
+                </ul>
+              </div>
+            </div>
+            <div class="about-kb" aria-hidden="true"></div>
           </div>
-          <div class="const-map">
-            <svg class="const-lines" aria-hidden="true"></svg>
-          </div>
+          <ol class="about-timeline" aria-label="My path so far"></ol>
         </div>
       </section>
 
