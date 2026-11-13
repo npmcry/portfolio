@@ -8,8 +8,7 @@ const STEPS = [
   { label: "B.A. Psychology", type: "init:", side: "psych", msg: "B.A. in Psychology at UNLV" },
   { label: "Cookies", type: "ship:", side: "code", msg: "Cookies, a web app that explains online tracking" },
   { label: "Pet MD", type: "ship:", side: "code", msg: "Pet MD, a mobile app for pet medications" },
-  { label: "PsyD", type: "feat:", side: "psych", msg: "started the PsyD at University of the Pacific" },
-  { label: "Research", type: "research:", side: "psych", msg: "how video games affect the mind" },
+  { label: "PsyD", type: "study:", side: "psych", msg: "Doctor of Clinical Psychology student, University of the Pacific" },
   { label: "Now", type: "now:", side: "code", msg: "studying minds, building for fun" },
 ];
 

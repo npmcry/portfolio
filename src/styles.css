@@ -756,7 +756,7 @@ section { position: relative; }
 .about-skills { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88rem; color: var(--mint); }
 .about-kb { position: relative; width: 100%; aspect-ratio: 4 / 3; }
 .about-kb canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; }
-.about-timeline { list-style: none; margin: clamp(24px, 4vw, 40px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); position: relative; }
+.about-timeline { list-style: none; margin: clamp(24px, 4vw, 40px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: relative; }
 .about-timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 22px; height: 1px; background: var(--line-strong); }
 .about-timeline button {
   position: relative; width: 100%; min-height: 64px; padding: 0; border: 0; background: none; cursor: pointer;
@@ -1154,7 +1154,7 @@ section { position: relative; }
 .squish-stage {
   position: relative; border-radius: 28px; outline: none;
   height: clamp(340px, 40vw, 480px);
-  background: radial-gradient(55% 60% at 50% 68%, rgba(255, 226, 154, 0.12), transparent 70%);
+  background: radial-gradient(closest-side at 50% 58%, rgba(255, 226, 154, 0.12), transparent);
 }
 .squish-stage:focus-visible { box-shadow: 0 0 0 2px var(--butter); }
 .squish-3d, .squish-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -1257,3 +1257,8 @@ section { position: relative; }
 .lab-gate.is-entered .gate-hint, .lab-gate.is-entered .gate-actions { display: none; }
 .lab-gate.is-entered .id-badge { cursor: default; }
 .lab-gate.is-entered #visitor-name { pointer-events: none; }
+
+/* Soft edges so sections blend into each other instead of meeting at a hard line */
+.squish-3d { -webkit-mask-image: radial-gradient(closest-side at 50% 50%, #000 72%, transparent 100%); mask-image: radial-gradient(closest-side at 50% 50%, #000 72%, transparent 100%); }
+.contact-bg { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 220px); mask-image: linear-gradient(to bottom, transparent 0, #000 220px); }
+.contact-overlay { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 220px); mask-image: linear-gradient(to bottom, transparent 0, #000 220px); }
