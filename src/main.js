@@ -1,5 +1,5 @@
 import "./styles.css";
-import { initGalaxy } from "./galaxy.js";
+import { initContactBg, flyPlane } from "./contact-bg.js";
 import { initMinecraft } from "./minecraft.js";
 import { initWellbeing } from "./wellbeing.js";
 import { initResearchLab } from "./research-lab.js";
@@ -271,6 +271,7 @@ function setupContactForm() {
       if (!res.ok) throw new Error("Failed to send");
       form.reset();
       status.classList.add("is-ok");
+      flyPlane(form.querySelector(".form-submit"));
       status.textContent = "Message sent. Thank you! I'll reply soon.";
     } catch (err) {
       console.error("Error sending message:", err);
@@ -298,6 +299,7 @@ function safe(fn, name) {
   safe(initWellbeing, "well-being");
   safe(initResearchLab, "research lab");
   safe(setupHeroObserver, "hero observer");
+  safe(initContactBg, "contact background");
   safe(initLotl, "lotl");
   safe(initSquish3D, "squish");
   await waitForFonts();
@@ -305,7 +307,6 @@ function safe(fn, name) {
   safe(buildAstroOverlay, "astro overlay");
   safe(initWhiteboard, "whiteboard");
   if (window.THREE) {
-    safe(initGalaxy, "galaxy");
     safe(initMinecraft, "minecraft");
   }
   requestAnimationFrame(tick);

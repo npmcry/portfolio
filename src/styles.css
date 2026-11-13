@@ -642,8 +642,34 @@ section { position: relative; }
 
 /* ---------- Contact ---------- */
 .contact { padding: var(--section-gap) var(--gutter); }
-.galaxy-container { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.6; }
-.contact-overlay { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(700px 460px at 70% 50%, rgba(15, 11, 36, 0.85), rgba(15, 11, 36, 0.3)); }
+.contact { overflow: hidden; }
+.contact-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.gel-layer, .mail-layer { position: absolute; inset: 0; }
+.gel { position: absolute; border-radius: 50%; background: var(--c); filter: blur(70px); opacity: 0.42; animation: gelDrift 26s ease-in-out infinite alternate; animation-play-state: paused; will-change: transform; }
+.gel.g1 { left: -6%; top: 40%; width: 38vw; height: 38vw; max-width: 480px; max-height: 480px; }
+.gel.g2 { left: 28%; top: -22%; width: 34vw; height: 34vw; max-width: 430px; max-height: 430px; opacity: 0.36; animation-duration: 31s; animation-delay: -8s; }
+.gel.g3 { right: -8%; top: 36%; width: 42vw; height: 42vw; max-width: 520px; max-height: 520px; opacity: 0.32; animation-duration: 29s; animation-delay: -15s; }
+.gel.g4 { left: 46%; top: 58%; width: 30vw; height: 30vw; max-width: 380px; max-height: 380px; opacity: 0.36; animation-duration: 23s; animation-delay: -4s; }
+.gel.g5 { right: 4%; top: -18%; width: 24vw; height: 24vw; max-width: 300px; max-height: 300px; opacity: 0.24; animation-duration: 34s; animation-delay: -20s; }
+@keyframes gelDrift { from { transform: translate(-4%, 5%) scale(0.92); } 50% { transform: translate(6%, -6%) scale(1.1); } to { transform: translate(-3%, -3%) scale(1); } }
+.mail-layer { transform: translate(var(--px, 0px), var(--py, 0px)); transition: transform 600ms var(--ease-out); }
+.mail-item { position: absolute; display: block; opacity: 0.9; animation: mailFloat var(--dur) ease-in-out var(--delay) infinite alternate; animation-play-state: paused; }
+.mail-item svg { display: block; width: 100%; height: auto; transform: rotate(var(--tilt)); filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.3)); }
+@keyframes mailFloat { from { transform: translate(-10px, 12px) rotate(-4deg); } to { transform: translate(14px, -16px) rotate(5deg); } }
+.m-plane { animation-name: planeGlide; }
+@keyframes planeGlide { from { transform: translate(-26px, 18px) rotate(4deg); } to { transform: translate(30px, -22px) rotate(-6deg); } }
+.m-spark { animation-name: sparkTwinkle; }
+.m-spark svg { filter: none; }
+@keyframes sparkTwinkle { from { transform: scale(0.5); opacity: 0.3; } to { transform: scale(1.15); opacity: 1; } }
+.gel-bubble { position: absolute; bottom: -40px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45); animation: bubbleRise var(--dur) linear var(--delay) infinite; animation-play-state: paused; }
+@keyframes bubbleRise { from { transform: translate(0, 0); opacity: 0; } 12% { opacity: 0.9; } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -110vh); opacity: 0; } }
+.contact-bg.is-live .gel, .contact-bg.is-live .mail-item, .contact-bg.is-live .gel-bubble { animation-play-state: running; }
+.contact-overlay { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(60% 70% at 50% 50%, rgba(15, 11, 36, 0.72), rgba(15, 11, 36, 0.2)); }
+.sent-plane { position: fixed; z-index: 50; width: 64px; margin: -26px 0 0 -32px; pointer-events: none; animation: planeSend 1500ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.sent-plane svg { display: block; width: 100%; height: auto; }
+@keyframes planeSend { from { transform: translate(0, 0) rotate(0) scale(0.5); opacity: 0; } 15% { opacity: 1; transform: translate(20px, -20px) rotate(-10deg) scale(1); } to { transform: translate(60vw, -70vh) rotate(-24deg) scale(0.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gel, .mail-item, .gel-bubble { animation: none !important; } .gel-bubble { display: none; } }
+@media (max-width: 700px) { .gel { filter: blur(50px); } .mail-item { opacity: 0.6; } }
 .contact-container {
   width: min(var(--measure), 100%); margin: 0 auto; position: relative; z-index: 1;
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: clamp(28px, 5vw, 80px); align-items: start;
